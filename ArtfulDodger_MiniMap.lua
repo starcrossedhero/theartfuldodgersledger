@@ -29,7 +29,6 @@ local dataObject = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("The Ar
 function minimap:OnEnable()
     minimap.db = addon.db
     button:Register("The Artful Dodger's Ledger", dataObject, self.db.settings.minimap)
-	addon:RegisterChatCommand("adl", "Show")
 end
 
 local ldbDataSourceDisplay = CreateFrame("Frame") 

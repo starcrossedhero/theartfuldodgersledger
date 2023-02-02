@@ -2,8 +2,7 @@ if UnitClass('player') ~= 'Rogue' then
     return
 end
 
-ArtfulDodger = LibStub("AceAddon-3.0"):NewAddon("ArtfulDodger", "AceConsole-3.0", "AceEvent-3.0")
-local AceGUI = LibStub("AceGUI-3.0")
+ArtfulDodger = LibStub("AceAddon-3.0"):NewAddon("ArtfulDodger", "AceEvent-3.0")
 
 local defaults = {
 	char = {
@@ -117,7 +116,6 @@ function PickPocketEvent:ToString()
 end
 
 function ArtfulDodger:OnInitialize()
-	self:RegisterChatCommand('adl', "ChatCommand")
 	self.db = LibStub("AceDB-3.0"):New("ArtfulDodgerDB", defaults).char
 	self.db.stats.session = defaults.char.stats.session
 	self.db.stats.session.start = time()
@@ -125,7 +123,6 @@ function ArtfulDodger:OnInitialize()
 		self.db.stats.total.start = self.db.stats.session.start
 	end
     self.db.session = {}
-	--ArtfulDodger:SortGlobalLootedHistoryTable()
     ArtfulDodger:StartStatUpdater()
 end
 
@@ -628,24 +625,4 @@ end
 
 function ArtfulDodger:TotalCopper(currency)
 	return (currency.gold * 1000) + (currency.silver * 100) + currency.copper
-end
-
-function ArtfulDodger:ChatCommand(input)
-	local input = strlower(input)
-	
-	if input == 'global' then
-		print(self:GetPrettyPrintTotalLootedString())
-	elseif input == 'session' then
-		print(self:GetPrettyPrintSessionLootedString())
-	elseif input == 'show' then
-		self:ShowFrame()
-	elseif input == 'clear' then
-		self:ResetLoot()
-	elseif input == "help" or input == "" then
-		print('Usage')
-		print('/adl help')
-		print('/adl global - Total stats from Pick Pocketing')
-		print('/adl session - Current stats from Pick Pocketing')
-		print('/adl clear - Clear Pick Pocketing data')
-	end
 end

@@ -117,7 +117,6 @@ function ui:FillHistoryTable(table, data)
 	if data then 
 		for event = 1, #data do
             event = data[event]
-			print(event.mark.name)
 			local row = ui:CreateRow()
 			for item = 1, #event.loot do
                 item = event.loot[item]
