@@ -14,3 +14,5 @@ ArtfulDodger_UI.lua
 ArtfulDodger_MiniMap.lua
 ArtfulDodger_Tooltip.lua
 ArtfulDodger_ChatCommands.lua
+ArtfulDodger_PickPocketEvent.lua
+ArtfulDodger_PickPocketLoot.lua

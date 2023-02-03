@@ -4,11 +4,9 @@ end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local map = addon:NewModule("ArtfulDodger_Map")
-local AceGUI = LibStub("AceGUI-3.0")
 
 local FRAME_UPDATE_INTERVAL = 0.1
 local FRAME_TIME_SINCE_LAST_UPDATE = 0
-
 local FRAME
 
 function map:CreateFrame()
