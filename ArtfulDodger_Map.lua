@@ -3,6 +3,7 @@ if UnitClass('player') ~= 'Rogue' then
 end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local stats = addon:GetModule("ArtfulDodger_Stats")
 local map = addon:NewModule("ArtfulDodger_Map")
 
 local FRAME_UPDATE_INTERVAL = 0.1
@@ -48,7 +49,8 @@ function map:CreateFrame()
 end
 
 function map:UpdateFrameText(mapId)
-    FRAME.text:SetText(map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, addon:GetMarksForMapAndChildrenByMapId(mapId), addon:GetCopperForMapAndChildrenByMapId(mapId)))
+    local stats = stats:GetStatsForMapAndChildrenByMapId(mapId)
+    FRAME.text:SetText(map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, stats.marks, stats.copper))
 end
 
 function map:GeneratePrettyString(name, marks, copper)

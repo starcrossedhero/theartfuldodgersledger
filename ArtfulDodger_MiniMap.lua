@@ -4,6 +4,7 @@ end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local gui = addon:GetModule("ArtfulDodger_UI")
+local stats = addon:GetModule("ArtfulDodger_Stats")
 local minimap = addon:NewModule("ArtfulDodger_MiniMap")
 
 local button = LibStub("LibDBIcon-1.0")
@@ -27,7 +28,7 @@ local dataObject = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("The Ar
 })
 
 function minimap:OnEnable()
-    minimap.db = addon.db
+    self.db = addon.db
     button:Register("The Artful Dodger's Ledger", dataObject, self.db.settings.minimap)
 end
 
@@ -37,14 +38,14 @@ ldbDataSourceDisplay:SetScript("OnUpdate", function(self, elapsed)
     if UPDATE_TIMER <= 0 then
         UPDATE_TIMER = UPDATE_FREQUENCY
         if minimap.db then
-            local duration = time() - minimap.db.stats.session.start
+            local duration = time() - stats.db.session.start
             dataObject.text = string.format(STATUS_STRING_FORMAT, 
-                minimap.db.stats.session.marks,
-                GetCoinTextureString(minimap.db.stats.session.copper),
-                GetCoinTextureString(addon:GetSessionCopperPerHour()),
-                GetCoinTextureString(addon:GetSessionCopperPerMark())
+                stats.db.session.marks,
+                GetCoinTextureString(stats.db.session.copper),
+                GetCoinTextureString(stats:GetSessionCopperPerHour()),
+                GetCoinTextureString(stats:GetSessionCopperPerMark())
             )
-            minimap.db.stats.session.duration = duration
+            stats.db.session.duration = duration
         end
     end
 end)
@@ -58,7 +59,7 @@ end
 function dataObject:OnTooltipShow()
     self:AddLine("The Artful Dodger's Ledger")
     self:AddLine("")
-    self:AddLine(addon:GetPrettyPrintTotalLootedString())
+    self:AddLine(stats:GetPrettyPrintTotalLootedString())
 end
 
 function dataObject:OnEnter()

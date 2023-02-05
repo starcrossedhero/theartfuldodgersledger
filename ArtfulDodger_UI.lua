@@ -3,8 +3,10 @@ if UnitClass('player') ~= 'Rogue' then
 end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local ui = addon:NewModule("ArtfulDodger_UI", "AceEvent-3.0")
 local map = addon:GetModule("ArtfulDodger_Map")
-local ui = addon:NewModule("ArtfulDodger_UI")
+local stats = addon:GetModule("ArtfulDodger_Stats")
+local loot = addon:GetModule("ArtfulDodger_Loot")
 local AceGUI = LibStub("AceGUI-3.0")
 
 local LOOT_TOTAL_STRING = "|cffeec300  Pilfered coin:  |cffFFFFFF%s  |r"
@@ -106,20 +108,19 @@ end
 function ui:CreateHistoryTable()
 	local container = ui:CreateScrollContainer()
 	table = ui:CreateScrollFrame()
-	ui:FillHistoryTable(table, ui.db.history)
+	ui:FillHistoryTable(table, ui.db.history.pickpocket)
 	container:AddChild(table)
 	return container
 end
 
 function ui:FillHistoryTable(table, data)
     table:ReleaseChildren()
-    local event, item
 	if data then 
-		for event = 1, #data do
-            event = data[event]
+		for e = #data, 1, -1 do
+            local event = data[e]
 			local row = ui:CreateRow()
-			for item = 1, #event.loot do
-                item = event.loot[item]
+			for i = 1, #event.loot do
+                local item = event.loot[i]
 				row:AddChild(ui:CreateCell(date(DATE_FORMAT, event.timestamp), columns.timestamp))
 				row:AddChild(ui:CreateCell(C_Map.GetMapInfo(event.mapId).name, columns.map))
 				row:AddChild(ui:CreateCell(event.areaName, columns.area))
@@ -169,24 +170,29 @@ function ui:CreateSettingsDisplay()
 	settingsContainer:SetLayout("Flow")
 
 	local resetSessionButton = AceGUI:Create("Button")
-	resetSessionButton:SetText("Reset Session")
+	resetSessionButton:SetText("Reset Current Session")
 	resetSessionButton:SetWidth(200)
-	resetSessionButton:SetCallback("OnClick", function() addon:ResetSessionStats() end)
+	resetSessionButton:SetCallback("OnClick", function() ui:SendMessage("ArtfulDodger_ResetSession") end)
 	settingsContainer:AddChild(resetSessionButton)
 
-	local resetAllButton = AceGUI:Create("Button")
-	resetAllButton:SetText("Reset All Stats")
-	resetAllButton:SetWidth(200)
-	resetAllButton:SetCallback("OnClick", function() addon:ResetAll() end)
-	settingsContainer:AddChild(resetAllButton)
+	local resetStatsButton = AceGUI:Create("Button")
+	resetStatsButton:SetText("Reset Stats")
+	resetStatsButton:SetWidth(200)
+	resetStatsButton:SetCallback("OnClick", function() ui:SendMessage("ArtfulDodger_ResetStats") end)
+	settingsContainer:AddChild(resetStatsButton)
+
+	local resetHistoryButton = AceGUI:Create("Button")
+	resetHistoryButton:SetText("Reset History")
+	resetHistoryButton:SetWidth(200)
+	resetHistoryButton:SetCallback("OnClick", function() ui:SendMessage("ArtfulDodger_ResetHistory") end)
+	settingsContainer:AddChild(resetHistoryButton)
     
-    settingsContainer:AddChild(ui:CreateUpdateIntervalSlider())
+    --settingsContainer:AddChild(ui:CreateUpdateIntervalSlider())
     
     local mapCheckbox = AceGUI:Create("CheckBox")
     mapCheckbox:SetType("checkbox")
     mapCheckbox:SetLabel("World Map Display")
     mapCheckbox:SetDescription("Shows map loot stats on world map")
-    mapCheckbox:SetValue(ui.db.settings.map.visible)
     mapCheckbox:SetCallback("OnValueChanged", function(_, event, value)
         map:ToggleMap(value)
     end)
@@ -220,7 +226,7 @@ function ui:CreateStatsDisplay()
 	container:SetLayout("Flow")
     container:SetHeight(100)
 
-    local maps = addon:GetMaps()
+    local maps = stats:GetMaps()
     
     local mapTotalLabel = AceGUI:Create("Label")
     mapTotalLabel:SetRelativeWidth(0.2)
@@ -238,21 +244,22 @@ function ui:CreateStatsDisplay()
         local mapId = key.value
 
         if mapId == "All" then
-            mapMarksLabel:SetText(ui:GetMarksString(ui.db.stats.total.marks))
-            mapAverageLabel:SetText(ui:GetAverageString(addon:GetTotalCopperPerMark()))
-            mapTotalLabel:SetText(ui:GetTotalString(ui.db.stats.total.copper))
-            ui:FillHistoryTable(table, ui.db.history)
+            mapMarksLabel:SetText(ui:GetMarksString(stats.db.history.marks))
+            mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.db.history.copper, stats.db.history.marks)))
+            mapTotalLabel:SetText(ui:GetTotalString(stats.db.history.copper))
+            ui:FillHistoryTable(table, addon.db.history.pickpocket)
         else
-            mapMarksLabel:SetText(ui:GetMarksString(addon:GetMarksByMapId(mapId)))
-            mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMarkByMapId(mapId)))
-            mapTotalLabel:SetText(ui:GetTotalString(addon:GetCopperByMapId(mapId)))
+			local stats = stats:GetStatsForMapId(mapId)
+            mapMarksLabel:SetText(ui:GetMarksString(stats.marks))
+            mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.copper, stats.marks)))
+            mapTotalLabel:SetText(ui:GetTotalString(stats.copper))
             ui:FillHistoryTable(table, addon:GetHistoryByMapId(mapId))
         end
     end)
     
-    mapAverageLabel:SetText(ui:GetAverageString(addon:GetTotalCopperPerMark()))
-    mapTotalLabel:SetText(ui:GetTotalString(ui.db.stats.total.copper))
-    mapMarksLabel:SetText(ui:GetMarksString(ui.db.stats.total.marks))
+    mapAverageLabel:SetText(ui:GetAverageString(stats:GetTotalCopperPerMark()))
+    mapTotalLabel:SetText(ui:GetTotalString(stats.db.history.copper))
+    mapMarksLabel:SetText(ui:GetMarksString(stats.db.history.marks))
     mapDropdown:SetValue("All")
     
     container:AddChild(mapDropdown)
@@ -282,18 +289,54 @@ function ui:CreateHeading(text, relativeWidth)
 	return heading
 end
 
+function ui:CreateJunkboxDisplay()
+	local container = AceGUI:Create("SimpleGroup")
+	container:SetFullWidth(true)
+	container:SetLayout("Flow")
+    container:SetHeight(200)
+
+	local junkboxes = loot.GetJunkboxes()
+	for i = 1, #junkboxes do
+		local label = AceGUI:Create("Icon")
+		local item = Item:CreateFromItemID(junkboxes[i].itemId)
+		item:ContinueOnItemLoad(function()
+			print("junkbox: ", item:GetItemName(), item:GetItemID(), item:GetItemLink(), item:GetItemIcon())
+			label:SetCallback("OnEnter", function(widget)
+				label:SetLabel(item:GetItemName())
+				label:SetImage(item:GetItemIcon())
+				label:SetImageSize(20,20)
+				GameTooltip:SetOwner(widget.frame, "ANCHOR_NONE")
+				GameTooltip:SetPoint("TOPLEFT", widget.frame, "BOTTOMLEFT")
+				GameTooltip:ClearLines()
+				GameTooltip:SetHyperlink(item:GetItemLink())
+				GameTooltip:Show()
+			end)
+			label:SetCallback("OnLeave", function()
+				GameTooltip:Hide()
+			end)
+		end)
+		label:SetLabel("default text")
+		label:SetRelativeWidth(0.3)
+		container:AddChild(label)
+	end
+
+	return container
+end
+
 function ui:CreateBaseUI()
 	local tab =  AceGUI:Create("TabGroup")
 	tab:SetLayout("Flow")
-	tab:SetTabs({{text="Picked Pockets", value="tab1"}, {text="Settings", value="tab2"}})
+	tab:SetTabs({{text="Picked Pockets", value="tab1"}, {text="Junkboxes", value="tab2"}, {text="Settings", value="tab3"}})
 	tab:SetCallback("OnGroupSelected", function(container, event, group)
 		container:ReleaseChildren()
-		if group == "tab1" then
+		if 	   group == "tab1" then
 			container:AddChild(ui:CreateStatsDisplay())
 			container:AddChild(ui:CreateTableSectionHeading())
 			container:AddChild(ui:CreateTableHeaders())
 			container:AddChild(ui:CreateHistoryTable())
 		elseif group == "tab2" then
+			container:AddChild(ui:CreateJunkboxDisplay())
+		elseif group == "tab3" then
 			container:AddChild(ui:CreateSettingsDisplay())
 		end
 	end)
@@ -330,7 +373,6 @@ function ui:CreateCell(title, column, image)
 		cell:SetText(title)
 	elseif column.column.type == "Icon" then
 		cell = AceGUI:Create(column.column.type)
-		--cell:SetLabel(title)
 		cell:SetImage(image)
 		cell:SetImageSize(20,20)
 		cell:SetCallback("OnEnter", function(widget)
