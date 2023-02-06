@@ -57,11 +57,22 @@ function stats:JunkboxLooted(message, e)
 end
 
 function stats:ResetStats()
-	self.db = defaults.char.stats
+	self.db.session = defaults.char.session
+    self.db.history = defaults.char.history
+    self.db.maps = defaults.char.maps
+    self.db.marks = defaults.char.marks
+    self.db.junkboxes = defaults.char.junkboxes
+
+    local time = time()
+    self.db.session.start = time
+    self.db.history.start = time
 end
 
 function stats:ResetSession()
-	self.db.session = defaults.char.stats.session
+	self.db.session = defaults.char.session
+    self.db.maps = defaults.char.maps
+    self.db.marks = defaults.char.marks
+    self.db.junkboxes = defaults.char.junkboxes
     self.db.session.start = time()
 end
 
@@ -171,6 +182,14 @@ function stats:GetCopperPerMarkByMapId(mapId)
 	local maps = self.db.maps
     if maps and maps[mapId] then
 	   return addon:GetCopperPerMark(maps[mapId].copper, maps[mapId].marks)
+    end
+    return 0
+end
+
+function stats:GetCopperPerMarkType(npcId)
+    local markType = self.db.marks[npcId]
+    if markType then
+        return addon:GetCopperPerMark(markType.copper, markType.marks)
     end
     return 0
 end

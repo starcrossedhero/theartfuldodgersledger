@@ -17,7 +17,7 @@ local DATE_FORMAT = "%b. %d \n%I:%M %p"
 
 local table
 
-local BASE_UI_FRAME
+local BASE_UI_FRAME, JUNKBOX_HISTORY_TABLE
 
 local columns = {
 	timestamp = {
@@ -89,6 +89,16 @@ local columns = {
 			type = "Label",
 			width = 0.08
 		}
+	},
+	junkbox = {
+		header = {
+			title = "Junkbox",
+			width = 0.3
+		},
+		column = {
+			type = "Icon",
+			width = 0.5
+		}
 	}
 }
 
@@ -114,8 +124,8 @@ function ui:CreateHistoryTable()
 end
 
 function ui:FillHistoryTable(table, data)
-    table:ReleaseChildren()
-	if data then 
+	if table and data then 
+		table:ReleaseChildren()
 		for e = #data, 1, -1 do
             local event = data[e]
 			local row = ui:CreateRow()
@@ -125,6 +135,26 @@ function ui:FillHistoryTable(table, data)
 				row:AddChild(ui:CreateCell(C_Map.GetMapInfo(event.mapId).name, columns.map))
 				row:AddChild(ui:CreateCell(event.areaName, columns.area))
 				row:AddChild(ui:CreateCell(event.mark.name, columns.mark))
+				row:AddChild(ui:CreateCell(item.link, columns.item, item.icon))
+				row:AddChild(ui:CreateCell(item.quantity, columns.quantity))
+				row:AddChild(ui:CreateCell(GetCoinTextureString(item.price), columns.price))
+			end
+			table:AddChild(row)
+		end
+	end
+end
+
+function ui:FillJunkboxTable(table, data)
+	if table and data then 
+		table:ReleaseChildren()
+		for i = #data, 1, -1 do
+            local event = data[i]
+			local junkbox = loot.GetJunkboxFromItemId(event.itemId)
+			local row = ui:CreateRow()
+			for i = 1, #event.loot do
+                local item = event.loot[i]
+				row:AddChild(ui:CreateCell(date(DATE_FORMAT, event.timestamp), columns.timestamp))
+				row:AddChild(ui:CreateCell(junkbox.link, columns.junkbox, junkbox.icon))
 				row:AddChild(ui:CreateCell(item.link, columns.item, item.icon))
 				row:AddChild(ui:CreateCell(item.quantity, columns.quantity))
 				row:AddChild(ui:CreateCell(GetCoinTextureString(item.price), columns.price))
@@ -144,6 +174,8 @@ end
 function ui:CreateScrollFrame()
 	local frame = AceGUI:Create("ScrollFrame")
 	frame:SetLayout("List")
+	frame:SetFullWidth(true)
+    frame:SetFullHeight(true)
 	return frame
 end
 
@@ -290,36 +322,10 @@ function ui:CreateHeading(text, relativeWidth)
 end
 
 function ui:CreateJunkboxDisplay()
-	local container = AceGUI:Create("SimpleGroup")
-	container:SetFullWidth(true)
-	container:SetLayout("Flow")
-    container:SetHeight(200)
-
-	local junkboxes = loot.GetJunkboxes()
-	for i = 1, #junkboxes do
-		local label = AceGUI:Create("Icon")
-		local item = Item:CreateFromItemID(junkboxes[i].itemId)
-		item:ContinueOnItemLoad(function()
-			print("junkbox: ", item:GetItemName(), item:GetItemID(), item:GetItemLink(), item:GetItemIcon())
-			label:SetCallback("OnEnter", function(widget)
-				label:SetLabel(item:GetItemName())
-				label:SetImage(item:GetItemIcon())
-				label:SetImageSize(20,20)
-				GameTooltip:SetOwner(widget.frame, "ANCHOR_NONE")
-				GameTooltip:SetPoint("TOPLEFT", widget.frame, "BOTTOMLEFT")
-				GameTooltip:ClearLines()
-				GameTooltip:SetHyperlink(item:GetItemLink())
-				GameTooltip:Show()
-			end)
-			label:SetCallback("OnLeave", function()
-				GameTooltip:Hide()
-			end)
-		end)
-		label:SetLabel("default text")
-		label:SetRelativeWidth(0.3)
-		container:AddChild(label)
-	end
-
+	local container = ui:CreateScrollContainer()
+	JUNKBOX_HISTORY_TABLE = ui:CreateScrollFrame()
+	ui:FillJunkboxTable(JUNKBOX_HISTORY_TABLE, ui.db.history.junkboxes)
+	container:AddChild(JUNKBOX_HISTORY_TABLE)
 	return container
 end
 
@@ -335,6 +341,7 @@ function ui:CreateBaseUI()
 			container:AddChild(ui:CreateTableHeaders())
 			container:AddChild(ui:CreateHistoryTable())
 		elseif group == "tab2" then
+			container:AddChild(ui:CreateJunkboxTableHeaders())
 			container:AddChild(ui:CreateJunkboxDisplay())
 		elseif group == "tab3" then
 			container:AddChild(ui:CreateSettingsDisplay())
@@ -363,6 +370,14 @@ function ui:CreateTableHeaders()
 	return header
 end
 
+function ui:CreateJunkboxTableHeaders()
+	local header = AceGUI:Create("SimpleGroup")
+	header:SetFullWidth(true)
+	header:SetLayout("Flow")
+	ui:AddJunkboxHeaders(header)
+	return header
+end
+
 function ui:CreateCell(title, column, image)
 	local cell
 	if column.column.type == "Label" then
@@ -376,7 +391,7 @@ function ui:CreateCell(title, column, image)
 		cell:SetImage(image)
 		cell:SetImageSize(20,20)
 		cell:SetCallback("OnEnter", function(widget)
-			if not string.match(title, "Coin") then
+			if title and not string.match(title, "Coin") then
                 GameTooltip:SetOwner(widget.frame, "ANCHOR_NONE")
                 GameTooltip:SetPoint("TOPLEFT", widget.frame, "BOTTOMLEFT")
                 GameTooltip:ClearLines()
@@ -398,6 +413,14 @@ function ui:AddHeader(parent, column)
 	header:SetRelativeWidth(column.header.width)
 	header:SetFontObject(GameFontNormalLarge)
 	parent:AddChild(header)
+end
+
+function ui:AddJunkboxHeaders(parent, column)
+	ui:AddHeader(parent, columns.timestamp)
+	ui:AddHeader(parent, columns.junkbox)
+	ui:AddHeader(parent, columns.item)
+	ui:AddHeader(parent, columns.quantity)
+	ui:AddHeader(parent, columns.price)
 end
 
 function ui:AddHeaders(parent)

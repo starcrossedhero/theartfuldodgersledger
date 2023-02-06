@@ -37,7 +37,7 @@ ldbDataSourceDisplay:SetScript("OnUpdate", function(self, elapsed)
     UPDATE_TIMER = UPDATE_TIMER - elapsed
     if UPDATE_TIMER <= 0 then
         UPDATE_TIMER = UPDATE_FREQUENCY
-        if minimap.db then
+        if stats.db then
             local duration = time() - stats.db.session.start
             dataObject.text = string.format(STATUS_STRING_FORMAT, 
                 stats.db.session.marks,

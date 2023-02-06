@@ -53,10 +53,9 @@ end
 function unit:UpdateNamePlate(unitId)
     local guid = UnitGUID(unitId)
     local name = UnitName(unitId)
-    local type = UnitCreatureType(unitId)
     local namePlate = C_NamePlate.GetNamePlateForUnit(unitId)
 
-    if type == "Humanoid" and unit:HasPocketsByGuid(guid) then 
+    if UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and unit:HasPocketsByGuid(guid) then 
         local mark = addon:GetLatestPickPocketByGuid(guid)
         if mark == nil then
             if namePlate.ArtfulDodger == nil then

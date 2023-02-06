@@ -50,7 +50,7 @@ function addon:UI_ERROR_MESSAGE(event, errorType, message)
 		message == SPELL_FAILED_TARGET_NO_POCKETS or 
 		message == SPELL_FAILED_ONLY_STEALTHED or 
 		message == SPELL_FAILED_ONLY_SHAPESHIFT) then
-        print("Pick pocket attempt failed, removing previous event")
+        --print("Pick pocket attempt failed, removing previous event")
         table.remove(self.db.history.pickpocket, #self.db.history.pickpocket)
     end
 end
@@ -62,9 +62,9 @@ function addon:LOOT_READY(event, slotNumber)
         local sources = {GetLootSourceInfo(slot)}
         for source = 1, #sources, 2 do
             sourceGuid = sources[source]
-            junkboxItemId =  Loot.GetJunkboxItemIdFromGuid(sourceGuid)
+            junkboxItem =  Loot.GetJunkboxFromGuid(sourceGuid)
             pickPocketEvent = addon:GetLatestPickPocketByGuid(sourceGuid)
-            if pickPocketEvent or junkboxItemId then
+            if pickPocketEvent or junkboxItem then
                 local lootIcon, lootName, lootQuantity, _, _, _, _, _, _ = GetLootSlotInfo(slot)
                 if slot > 1 and lootName then
                     local lootLink = GetLootSlotLink(slot)
@@ -83,15 +83,15 @@ function addon:LOOT_READY(event, slotNumber)
         end
     end
     
-    if junkboxItemId then
-        addon:SaveJunkboxLoot(time(), sourceGuid, junkboxItemId, loot)
+    if junkboxItem then
+        addon:SaveJunkboxLoot(time(), sourceGuid, junkboxItem, loot)
     elseif pickPocketEvent then
         addon:SaveLootToPickPocketEvent(pickPocketEvent, loot)
     end
 end
 
-function addon:SaveJunkboxLoot(timestamp, sourceGuid, itemId, loot)
-    local junkbox = JunkboxEvent:New(timestamp, sourceGuid, itemId, loot)
+function addon:SaveJunkboxLoot(timestamp, sourceGuid, junkboxItem, loot)
+    local junkbox = JunkboxEvent:New(timestamp, junkboxItem.itemId, sourceGuid, loot)
     if addon:IsJunkboxEligibleForLoot(junkbox) then
         table.insert(self.db.history.junkboxes, junkbox)
         addon:SendMessage("ArtfulDodger_JunkboxLooted", junkbox)
@@ -125,13 +125,13 @@ function addon:COMBAT_LOG_EVENT_UNFILTERED(event)
                 mapId,
                 areaName
             )
-            print("Pick Pocket spell cast successful, creating event: ", event:ToString())
+            --print("Pick Pocket spell cast successful, creating event: ", event:ToString())
 			addon:SavePickPocketEvent(event)
 		end
     end
-    if spellName == "Pick Lock" then
-        print(timestamp, subEvent, sourceGuid, sourceName, destGuid, destName, spellName)
-    end
+    --if spellName == "Pick Lock" then
+    --    print(timestamp, subEvent, sourceGuid, sourceName, destGuid, destName, spellName)
+    --end
 end
 
 function addon:GetPickPocketMarkIndex(guid)
@@ -146,7 +146,6 @@ end
 function addon:GetLatestPickPocketByGuid(guid)
     for event = #self.db.history.pickpocket, 1, -1 do
         if guid == self.db.history.pickpocket[event].mark.guid then
-            print("matched: ", guid, self.db.history.pickpocket[event].timestamp)
             return self.db.history.pickpocket[event]
         end
     end
@@ -155,10 +154,10 @@ end
 
 function addon:SavePickPocketEvent(event)
     if #self.db.history.pickpocket >= self.db.settings.history.eventLimit then
-        print("Event tracking limit reached. Removing: ", event:ToString())
+        --print("Event tracking limit reached. Removing: ", event:ToString())
         table.remove(self.db.history.pickpocket)
     end
-    print("Inserting pick pocket event: ", event:ToString())
+    --print("Inserting pick pocket event: ", event:ToString())
     table.insert(self.db.history.pickpocket, event)
     --self:SortGlobalLootedHistoryTable()
 end
@@ -171,10 +170,9 @@ function addon:IsNewPickPocketEvent(sourceName, subEvent, spellName)
 end
 
 function addon:SaveLootToPickPocketEvent(event, loot)
-    print("save: ", #event.loot, #loot)
     if #event.loot < 1 then
         event.loot = loot
-        print("Saving loot to history: ", event:ToString())
+        --print("Saving loot to history: ", event:ToString())
         addon:SendMessage("ArtfulDodger_PickPocketComplete", event)
     end
 end
@@ -262,20 +260,11 @@ function addon:GetHistoryByMapId(mapId)
 end
 
 function addon:GetCopperPerMark(copper, count)
-    print(copper, count)
 	if copper and count and copper > 0 and count > 0 then
         local avg = self:Round((copper / count))
 		return avg
 	end
 	return 0
-end
-
-function addon:GetCopperPerMarkType(npcId)
-    local markType = self.db.stats.marks[npcId]
-    if markType then
-        return self:GetCopperPerMark(markType.copper, markType.marks)
-    end
-    return 0
 end
 
 function addon:GetCopperPerHour(copper, seconds)
