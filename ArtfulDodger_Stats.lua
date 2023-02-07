@@ -28,7 +28,10 @@ local defaults = {
 }
 
 function stats:OnInitialize()
-    self.db = addon.dbo:RegisterNamespace("Stats", defaults).char
+    self.db = addon.dbo:GetNamespace("Stats", true)
+    if self.db == nil then
+        self.db = addon.dbo:RegisterNamespace("Stats", defaults).char
+    end
     self.db.session = defaults.char.session
 	self.db.session.start = time()
 	if self.db.history.start <= 0 then

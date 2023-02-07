@@ -9,15 +9,13 @@ local stats = addon:GetModule("ArtfulDodger_Stats")
 local loot = addon:GetModule("ArtfulDodger_Loot")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local LOOT_TOTAL_STRING = "|cffeec300  Pilfered coin:  |cffFFFFFF%s  |r"
+local LOOT_TOTAL_STRING = "|cffeec300  Pilfered coin:\n  |cffFFFFFF%s  |r"
 local LOOT_MARKS_STRING = "|cffeec300     Picked pockets:  |cffFFFFFF%d  |r"
-local LOOT_AVERAGE_STRING = "|cffeec300  Coin per mark:  |cffFFFFFF%s  |r"
+local LOOT_AVERAGE_STRING = "|cffeec300  Typical purse:\n  |cffFFFFFF%s  |r"
 
 local DATE_FORMAT = "%b. %d \n%I:%M %p"
 
-local table
-
-local BASE_UI_FRAME, JUNKBOX_HISTORY_TABLE
+local BASE_UI_FRAME, PICKPOCKET_HISTORY_TABLE, JUNKBOX_HISTORY_TABLE
 
 local columns = {
 	timestamp = {
@@ -117,16 +115,16 @@ end
 
 function ui:CreateHistoryTable()
 	local container = ui:CreateScrollContainer()
-	table = ui:CreateScrollFrame()
-	ui:FillHistoryTable(table, ui.db.history.pickpocket)
-	container:AddChild(table)
+	PICKPOCKET_HISTORY_TABLE = ui:CreateScrollFrame()
+	ui:FillHistoryTable(PICKPOCKET_HISTORY_TABLE, ui.db.history.pickpocket, #ui.db.history.pickpocket - 10)
+	container:AddChild(PICKPOCKET_HISTORY_TABLE)
 	return container
 end
 
-function ui:FillHistoryTable(table, data)
+function ui:FillHistoryTable(table, data, index)
 	if table and data then 
 		table:ReleaseChildren()
-		for e = #data, 1, -1 do
+		for e = #data, index, -1 do
             local event = data[e]
 			local row = ui:CreateRow()
 			for i = 1, #event.loot do
@@ -252,6 +250,41 @@ function ui:CreateUpdateIntervalSlider()
     return container
 end
 
+function ui:CreateMapDropdown()
+	local container = AceGUI:Create("SimpleGroup")
+	container:SetFullWidth(true)
+	container:SetLayout("Flow")
+    container:SetHeight(100)
+
+    local maps = stats:GetMaps()
+
+	local mapDropdown = AceGUI:Create("Dropdown")
+    mapDropdown:SetLabel("Maps")
+    mapDropdown:SetRelativeWidth(0.3)
+    mapDropdown:SetList(maps)
+    mapDropdown:AddItem("All", "All Maps")
+    mapDropdown:SetCallback("OnValueChanged", function(key)
+        local mapId = key.value
+
+        if mapId == "All" then
+            mapMarksLabel:SetText(ui:GetMarksString(stats.db.history.marks))
+            mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.db.history.copper, stats.db.history.marks)))
+            mapTotalLabel:SetText(ui:GetTotalString(stats.db.history.copper))
+			BASE_UI_FRAME:SetStatusText(ui:GetMarksString(stats.db.history.marks).."\t"..ui:GetTotalString(stats.db.history.copper).."\t"..ui:GetAverageString(addon:GetCopperPerMark(stats.db.history.copper, stats.db.history.marks)))
+            ui:FillHistoryTable(PICKPOCKET_HISTORY_TABLE, addon.db.history.pickpocket, #addon.db.history.pickpocket - 11)
+        else
+			local stats = stats:GetStatsForMapId(mapId)
+            mapMarksLabel:SetText(ui:GetMarksString(stats.marks))
+            mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.copper, stats.marks)))
+            mapTotalLabel:SetText(ui:GetTotalString(stats.copper))
+			local history = addon:GetHistoryByMapId(mapId)
+            ui:FillHistoryTable(PICKPOCKET_HISTORY_TABLE, history, #history - 11)
+        end
+    end)
+
+	return container
+end
+
 function ui:CreateStatsDisplay()
 	local container = AceGUI:Create("SimpleGroup")
 	container:SetFullWidth(true)
@@ -279,13 +312,15 @@ function ui:CreateStatsDisplay()
             mapMarksLabel:SetText(ui:GetMarksString(stats.db.history.marks))
             mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.db.history.copper, stats.db.history.marks)))
             mapTotalLabel:SetText(ui:GetTotalString(stats.db.history.copper))
-            ui:FillHistoryTable(table, addon.db.history.pickpocket)
+			BASE_UI_FRAME:SetStatusText(ui:GetMarksString(stats.db.history.marks).."\t"..ui:GetTotalString(stats.db.history.copper).."\t"..ui:GetAverageString(addon:GetCopperPerMark(stats.db.history.copper, stats.db.history.marks)))
+            ui:FillHistoryTable(PICKPOCKET_HISTORY_TABLE, addon.db.history.pickpocket, #addon.db.history.pickpocket - 11)
         else
 			local stats = stats:GetStatsForMapId(mapId)
             mapMarksLabel:SetText(ui:GetMarksString(stats.marks))
             mapAverageLabel:SetText(ui:GetAverageString(addon:GetCopperPerMark(stats.copper, stats.marks)))
             mapTotalLabel:SetText(ui:GetTotalString(stats.copper))
-            ui:FillHistoryTable(table, addon:GetHistoryByMapId(mapId))
+			local history = addon:GetHistoryByMapId(mapId)
+            ui:FillHistoryTable(PICKPOCKET_HISTORY_TABLE, history, #history - 11)
         end
     end)
     

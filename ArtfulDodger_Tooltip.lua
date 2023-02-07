@@ -7,12 +7,13 @@ local stats = addon:GetModule("ArtfulDodger_Stats")
 local tooltip = addon:NewModule("ArtfulDodger_Tooltip")
 
 local function OnTooltipSetItem(tooltip, data)
-    local unitLink = "|cffffff00|Hunit:%s|h[%s]|h|r"
     if tooltip == GameTooltip then
         local guid = UnitGUID("mouseover")
         if guid and UnitCreatureType("mouseover") == "Humanoid" and not UnitIsPlayer("mouseover") and not UnitIsFriend("player", "mouseover") then
-            local npcId = strsplittable("-", guid)[6]
-            tooltip:AddLine("Typical Purse: "..GetCoinTextureString(stats:GetCopperPerMarkType(npcId)))
+            local npcId = select(6, strsplit("-", guid))
+            if npcId then 
+                tooltip:AddLine("Typical Purse: "..GetCoinTextureString(stats:GetCopperPerMarkType(npcId)))
+            end
         end
     end
 end
