@@ -6,10 +6,10 @@ local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local ppe = addon:NewModule("ArtfulDodger_PickPocketEvent")
 
 PickPocketEvent = {}
-function ppe:New(eventTime, eventMark, eventMapId, eventAreaName, eventLoot)
+function ppe:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
 	local this = {
 		timestamp = eventTime or 0,
-		mark = eventMark or {},
+		victim = eventVictim or {},
 		mapId = eventMapId or "",
         areaName = eventAreaName or "",
 		loot = eventLoot or {}
@@ -20,11 +20,11 @@ function ppe:New(eventTime, eventMark, eventMapId, eventAreaName, eventLoot)
 end
 
 function ppe:CreateRow()
-	return {timestamp=self.timestamp, mark=self.mark, mapId=self.mapId, areaName=self.areaName, loot=self.loot}
+	return {timestamp=self.timestamp, victim=self.victim, mapId=self.mapId, areaName=self.areaName, loot=self.loot}
 end
 
 function ppe:ToString()
-	return string.format("PickPocketEvent: timestamp=%d, mark=%s, mapId=%s, areaName=%s, loot=%d", self.timestamp, self.mark.guid, self.mapId, self.areaName, #self.loot)
+	return string.format("PickPocketEvent: timestamp=%d, victim=%s, mapId=%s, areaName=%s, loot=%d", self.timestamp, self.victim.guid, self.mapId, self.areaName, #self.loot)
 end
 
 function ppe:GetCopperFromLoot()

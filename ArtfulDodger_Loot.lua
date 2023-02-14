@@ -12,15 +12,15 @@ local CURRENCY_LINK = CURRENCY_COLOR..CURRENCY_STRING.."|r"
 local CURRENCY_ICON_ID = "Interface\\Icons\\INV_Misc_Coin_01"
 
 local JUNKBOXES = {
-	{itemId=16882, icon=132594, link="\124cffffffff\124Hitem:16882::::::::70:::::\124h[Battered Junkbox]\124h\124r", price=74},
-	{itemId=16883, icon=132594, link="\124cffffffff\124Hitem:16883::::::::70:::::\124h[Worn Junkbox]\124h\124r", price=124},
-	{itemId=16884, icon=132596, link="\124cffffffff\124Hitem:16884::::::::70:::::\124h[Sturdy Junkbox]\124h\124r", price=254},
-	{itemId=16885, icon=132596, link="\124cffffffff\124Hitem:16885::::::::70:::::\124h[Heavy Junkbox]\124h\124r", price=376},
-    {itemId=63349, icon=132597, link="\124cffffffff\124Hitem:63349::::::::70:::::\124h[Flame-Scarred Junkbox]\124h\124r", price=1196},
-    {itemId=43575, icon=132597, link="\124cffffffff\124Hitem:43575::::::::70:::::\124h[Reinforced Junkbox]\124h\124r", price=376},
-    {itemId=29569, icon=132595, link="\124cffffffff\124Hitem:29569::::::::70:::::\124h[Strong Junkbox]\124h\124r", price=371},
-    {itemId=88165, icon=132596, link="\124cffffffff\124Hitem:88165::::::::70:::::\124h[Vine-Cracked Junkbox]\124h\124r", price=12786},
-    {itemId=106895, icon=132596, link="\124cffffffff\124Hitem:106895::::::::70:::::\124h[Iron-Bound Junkbox]\124h\124r", price=12786}
+	{itemId=16882, name="Battered Junkbox", icon=132594, link="\124cffffffff\124Hitem:16882::::::::70:::::\124h[Battered Junkbox]\124h\124r", price=74},
+	{itemId=16883, name="Worn Junkbox", icon=132594, link="\124cffffffff\124Hitem:16883::::::::70:::::\124h[Worn Junkbox]\124h\124r", price=124},
+	{itemId=16884, name="Sturdy Junkbox", icon=132596, link="\124cffffffff\124Hitem:16884::::::::70:::::\124h[Sturdy Junkbox]\124h\124r", price=254},
+	{itemId=16885, name="Heavy Junkbox", icon=132596, link="\124cffffffff\124Hitem:16885::::::::70:::::\124h[Heavy Junkbox]\124h\124r", price=376},
+    {itemId=63349, name="Flame-Scarred Junkbox", icon=132597, link="\124cffffffff\124Hitem:63349::::::::70:::::\124h[Flame-Scarred Junkbox]\124h\124r", price=1196},
+    {itemId=43575, name="Reinforced Junkbox", icon=132597, link="\124cffffffff\124Hitem:43575::::::::70:::::\124h[Reinforced Junkbox]\124h\124r", price=376},
+    {itemId=29569, name="Strong Junkbox", icon=132595, link="\124cffffffff\124Hitem:29569::::::::70:::::\124h[Strong Junkbox]\124h\124r", price=371},
+    {itemId=88165, name="Vine-Cracked Junkbox", icon=132596, link="\124cffffffff\124Hitem:88165::::::::70:::::\124h[Vine-Cracked Junkbox]\124h\124r", price=12786},
+    {itemId=106895, name="Iron-Bound Junkbox", icon=132596, link="\124cffffffff\124Hitem:106895::::::::70:::::\124h[Iron-Bound Junkbox]\124h\124r", price=12786}
 }
 
 Loot = {}
@@ -70,8 +70,12 @@ function loot.IsJunkbox(itemId)
 	return false
 end
 
-function loot.GetJunkboxes()
-    return JUNKBOXES
+function loot.GetJunkboxList()
+    local junkboxes = {}
+    for i = 1, #JUNKBOXES do
+        junkboxes[JUNKBOXES[i].itemId] = JUNKBOXES[i].name
+    end
+	return junkboxes
 end
 
 function loot.GetJunkboxFromGuid(guid)

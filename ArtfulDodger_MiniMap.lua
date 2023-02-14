@@ -14,7 +14,7 @@ local UPDATE_TIMER = 0
 
 local GOLD = "|cffeec300"
 local WHITE = "|cffFFFFFF"
-local STATUS_STRING_FORMAT = GOLD.."Marks:|r "..WHITE.."%d|r   "..GOLD.."Coin:|r "..WHITE.."%s|r  "..GOLD.."Per Hour:|r  "..WHITE.."%s|r"..GOLD.."  Per Mark:|r  "..WHITE.."%s|r"
+local STATUS_STRING_FORMAT = GOLD.."Vistims:|r "..WHITE.."%d|r   "..GOLD.."Coin:|r "..WHITE.."%s|r  "..GOLD.."Per Hour:|r  "..WHITE.."%s|r"..GOLD.."  Per Victim:|r  "..WHITE.."%s|r"
 
 local dataObject = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("The Artful Dodger's Ledger", {
     type = "data source", 
@@ -40,10 +40,10 @@ ldbDataSourceDisplay:SetScript("OnUpdate", function(self, elapsed)
         if stats.db then
             local duration = time() - stats.db.session.start
             dataObject.text = string.format(STATUS_STRING_FORMAT, 
-                stats.db.session.marks,
+                stats.db.session.victims,
                 GetCoinTextureString(stats.db.session.copper),
                 GetCoinTextureString(stats:GetSessionCopperPerHour()),
-                GetCoinTextureString(stats:GetSessionCopperPerMark())
+                GetCoinTextureString(stats:GetSessionCopperPerVictim())
             )
             stats.db.session.duration = duration
         end

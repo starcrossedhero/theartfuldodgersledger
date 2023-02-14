@@ -4,9 +4,9 @@ end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local stats = addon:GetModule("ArtfulDodger_Stats")
-local map = addon:NewModule("ArtfulDodger_Map")
+local map = addon:NewModule("ArtfulDodger_Map", "AceEvent-3.0")
 
-local FRAME_UPDATE_INTERVAL = 0.1
+local FRAME_UPDATE_INTERVAL = 3
 local FRAME_TIME_SINCE_LAST_UPDATE = 0
 local FRAME
 
@@ -24,18 +24,19 @@ function map:CreateFrame()
     frame.texture:SetVertexColor(0, 0, 0, 0.3)
     frame:SetScript("OnUpdate", function(self, elapsed)
         FRAME_TIME_SINCE_LAST_UPDATE = FRAME_TIME_SINCE_LAST_UPDATE + elapsed
-    
-        if FRAME_TIME_SINCE_LAST_UPDATE >= FRAME_UPDATE_INTERVAL then
-            if WorldMapFrame.ScrollContainer:IsVisible() and MouseIsOver(WorldMapFrame.ScrollContainer) then
-                local cursorX, cursorY = WorldMapFrame.ScrollContainer:GetNormalizedCursorPosition()
-                local mapId = WorldMapFrame:GetMapID()
-                
-                if mapId and map:IsValidCoords(cursorX, cursorY) then
-                    local mapInfo = C_Map.GetMapInfoAtPosition(mapId, cursorX, cursorY)
-                    if mapInfo then
-                        map:UpdateFrameText(mapInfo.mapID)
-                    else
-                        map:UpdateFrameText(mapId)
+        if map.settings.enabled then
+            if FRAME_TIME_SINCE_LAST_UPDATE >= FRAME_UPDATE_INTERVAL then
+                if WorldMapFrame.ScrollContainer:IsVisible() and MouseIsOver(WorldMapFrame.ScrollContainer) then
+                    local cursorX, cursorY = WorldMapFrame.ScrollContainer:GetNormalizedCursorPosition()
+                    local mapId = WorldMapFrame:GetMapID()
+                    
+                    if mapId and map:IsValidCoords(cursorX, cursorY) then
+                        local mapInfo = C_Map.GetMapInfoAtPosition(mapId, cursorX, cursorY)
+                        if mapInfo then
+                            map:UpdateFrameText(mapInfo.mapID)
+                        else
+                            map:UpdateFrameText(mapId)
+                        end
                     end
                 end
             end
@@ -50,11 +51,11 @@ end
 
 function map:UpdateFrameText(mapId)
     local stats = stats:GetStatsForMapAndChildrenByMapId(mapId)
-    FRAME.text:SetText(map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, stats.marks, stats.copper))
+    FRAME.text:SetText(map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, stats.victims, stats.copper))
 end
 
-function map:GeneratePrettyString(name, marks, copper)
-    return string.format("%s\nMarks: %d   Coin: %s", name, marks, GetCoinTextureString(copper))
+function map:GeneratePrettyString(name, victims, copper)
+    return string.format("%s\nVictims: %d   Coin: %s", name, victims, GetCoinTextureString(copper))
 end
 
 function map:IsValidCoords(x, y)
@@ -62,14 +63,20 @@ function map:IsValidCoords(x, y)
 end
 
 function map:OnEnable()
-    map.db = addon.db
+    self.db = addon.db
+    self.settings = addon.db.settings.map
     FRAME = map:CreateFrame()
+    self:RegisterMessage("ArtfulDodger_ToggleMap", "ToggleMap")
 end
 
-function map:ToggleMap(state)
-    if state then
+function map:ToggleMap(_, enabled)
+    if enabled == self.settings.enabled then
+        return
+    end
+    if enabled then
         FRAME:Show()
     else
         FRAME:Hide()
     end
+    self.settings.enabled = enabled
 end
