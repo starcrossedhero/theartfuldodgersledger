@@ -12,8 +12,19 @@ local defaults = {
 				hide = false,
 				minimapPos = 136.23
 			},
+            map = {
+
+            },
             history = {
                 eventLimit = 10000
+            },
+            unitFrame = {
+                enabled = true,
+                lootRespawnSeconds = 420,
+                updateFrequencySeconds = 5
+            },
+            tooltip = {
+                enabled = true
             }
 		},
 		history = {
@@ -134,9 +145,9 @@ function addon:COMBAT_LOG_EVENT_UNFILTERED(event)
     --end
 end
 
-function addon:GetPickPocketMarkIndex(guid)
+function addon:GetPickPocketVictimIndex(guid)
     for event = #self.db.history.pickpocket, 1, -1 do
-        if guid == self.db.history.pickpocket[event].mark.guid then
+        if guid == self.db.history.pickpocket[event].victim.guid then
             return event
         end
     end
@@ -145,7 +156,7 @@ end
 
 function addon:GetLatestPickPocketByGuid(guid)
     for event = #self.db.history.pickpocket, 1, -1 do
-        if guid == self.db.history.pickpocket[event].mark.guid then
+        if guid == self.db.history.pickpocket[event].victim.guid then
             return self.db.history.pickpocket[event]
         end
     end
@@ -177,8 +188,8 @@ function addon:SaveLootToPickPocketEvent(event, loot)
     end
 end
 
-function addon:IsMarkEligibleForLoot(markIndex)
-    if self.db.history.pickpocket[markIndex] and #self.db.history.pickpocket[markIndex].loot < 1 then
+function addon:IsVictimEligibleForLoot(victimIndex)
+    if self.db.history.pickpocket[victimIndex] and #self.db.history.pickpocket[victimIndex].loot < 1 then
         return true
     end
     return false
@@ -206,33 +217,33 @@ function addon:GetTotalStatsPerMap()
             end
 
             if maps[mapId] == nil then
-                maps[mapId] = {copper = 0, marks = 0}
+                maps[mapId] = {copper = 0, victims = 0}
             end
 
             maps[mapId].copper = maps[mapId].copper + copper
-            maps[mapId].marks = maps[mapId].marks + 1
+            maps[mapId].victims = maps[mapId].victims + 1
         end
     end
     return maps
 end
 
-function addon:GetTotalStatsPerMark()
-    local marks = {}
+function addon:GetTotalStatsPerVictim()
+    local victims = {}
     for event = 1, #self.db.history.pickpocket do
-        local npcId = self.db.history.pickpocket[event].mark.npcId
+        local npcId = self.db.history.pickpocket[event].victim.npcId
         if npcId then
             local copper = 0
-            if not marks[npcId] then
-                marks[npcId] = {copper = 0, marks = 0}
+            if not victims[npcId] then
+                victims[npcId] = {copper = 0, victims = 0}
             end
             for i = 1, #self.db.history.pickpocket[event].loot do
                  copper = copper + self.db.history.pickpocket[event].loot[i].price
             end
-            marks[npcId].copper = marks[npcId].copper + copper
-            marks[npcId].marks = marks[npcId].marks + 1
+            victims[npcId].copper = victims[npcId].copper + copper
+            victims[npcId].victims = victims[npcId].victims + 1
         end
     end
-    return marks
+    return victims
 end
 
 function addon:GetTotalCopperFromSession()
@@ -251,7 +262,7 @@ end
 
 function addon:GetHistoryByMapId(mapId)
 	local maps = {}
-	for event = #self.db.history.pickpocket, 1, -1 do
+	for event = 1, #self.db.history.pickpocket, 1 do
 		if self.db.history.pickpocket[event].mapId == mapId then
 			table.insert(maps, self.db.history.pickpocket[event])
 		end
@@ -259,7 +270,78 @@ function addon:GetHistoryByMapId(mapId)
 	return maps
 end
 
-function addon:GetCopperPerMark(copper, count)
+function addon:GetHistoryByMapIdAndNpcId(mapId, npcId)
+	local history = {}
+	for event = #self.db.history.pickpocket, 1, -1 do
+		if self.db.history.pickpocket[event].mapId == mapId and self.db.history.pickpocket[event].victim.npcId == npcId then
+			table.insert(history, self.db.history.pickpocket[event])
+		end
+	end
+	return history
+end
+
+function addon:GetVictimNamesFromTable(historyTable)
+    local victims = {}
+    for i = 1, #historyTable do
+        local victim = historyTable[i].victim
+        if victims[victim.npcId] == nil then
+            victims[victim.npcId] = victim.name
+        end
+    end
+    return victims
+end
+
+function addon:GetHistoryByNpcId(npcId)
+	local victims = {}
+	for event = #self.db.history.pickpocket, 1, -1 do
+		if self.db.history.pickpocket[event].victim.npcId == npcId then
+			table.insert(victims, self.db.history.pickpocket[event])
+		end
+	end
+	return victims
+end
+
+function addon:GetHistoryByJunkboxId(junkboxId)
+	local victims = {}
+	for event = 1, #self.db.history.junkboxes, 1 do
+		if self.db.history.junkboxes[event].itemId == junkboxId then
+			table.insert(victims, self.db.history.junkboxes[event])
+		end
+	end
+	return victims
+end
+
+function addon:GetHistoryFromTableByNpcId(historyTable, npcId)
+	local victims = {}
+	for event = 1, #historyTable, 1 do
+		if historyTable[event].victim.npcId == npcId then
+			table.insert(victims, historyTable[event])
+		end
+	end
+	return victims
+end
+
+function addon:GetHistoryByNpcName(name)
+	local victims = {}
+	for event = #self.db.history.pickpocket, 1, -1 do
+		if self.db.history.pickpocket[event].victim.name == name then
+			table.insert(victims, self.db.history.pickpocket[event])
+		end
+	end
+	return victims
+end
+
+function addon:GetNpcNameByNpcId(npcId)
+	for event = #self.db.history.pickpocket, 1, -1 do
+        local id = self.db.history.pickpocket[event].victim.npcId
+		if id == npcId then
+			return self.db.history.pickpocket[event].victim.name
+		end
+	end
+	return nil
+end
+
+function addon:GetCopperPerVictim(copper, count)
 	if copper and count and copper > 0 and count > 0 then
         local avg = self:Round((copper / count))
 		return avg
