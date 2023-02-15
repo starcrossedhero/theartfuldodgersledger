@@ -12,11 +12,12 @@ ArtfulDodger_Core.lua
 ArtfulDodger_JunkboxEvent.lua
 ArtfulDodger_PickPocketEvent.lua
 ArtfulDodger_Loot.lua
-ui\PickPocketTable.lua
-ui\JunkboxTable.lua
+ui\ArtfulDodger_BaseTable.lua
+ui\ArtfulDodger_PickPocketTable.lua
+ui\ArtfulDodger_JunkboxTable.lua
 ArtfulDodger_Stats.lua
 ArtfulDodger_Map.lua
-ArtfulDodger_UI.lua
+ui\ArtfulDodger_UI.lua
 ArtfulDodger_MiniMap.lua
 ArtfulDodger_Tooltip.lua
 ArtfulDodger_UnitFrame.lua

@@ -3,10 +3,11 @@ if UnitClass('player') ~= 'Rogue' then
 end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local ppe = addon:NewModule("ArtfulDodger_PickPocketEvent")
 
-PickPocketEvent = {}
-function ppe:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
+local PickPocketEvent = {}
+addon.PickPocketEvent = PickPocketEvent 
+
+function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
 	local this = {
 		timestamp = eventTime or 0,
 		victim = eventVictim or {},
@@ -19,15 +20,15 @@ function ppe:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
 	return this
 end
 
-function ppe:CreateRow()
+function PickPocketEvent:CreateRow()
 	return {timestamp=self.timestamp, victim=self.victim, mapId=self.mapId, areaName=self.areaName, loot=self.loot}
 end
 
-function ppe:ToString()
+function PickPocketEvent:ToString()
 	return string.format("PickPocketEvent: timestamp=%d, victim=%s, mapId=%s, areaName=%s, loot=%d", self.timestamp, self.victim.guid, self.mapId, self.areaName, #self.loot)
 end
 
-function ppe:GetCopperFromLoot()
+function PickPocketEvent:GetCopperFromLoot()
 	local copper = 0
 	for i = 1, #self.loot do
         local item = self.loot[i]

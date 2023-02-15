@@ -35,9 +35,9 @@ local defaults = {
 }
 
 function addon:OnInitialize()
-    PickPocketEvent = addon:GetModule("ArtfulDodger_PickPocketEvent")
-    JunkboxEvent = addon:GetModule("ArtfulDodger_JunkboxEvent")
-    Loot = addon:GetModule("ArtfulDodger_Loot")
+    PickPocketEvent = addon.PickPocketEvent
+    JunkboxEvent = addon.JunkboxEvent
+    Loot = addon.Loot
 
 	self.dbo = LibStub("AceDB-3.0"):New("ArtfulDodgerDB", defaults)
     self.db = self.dbo.char

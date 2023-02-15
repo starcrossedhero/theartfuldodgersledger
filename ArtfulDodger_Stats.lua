@@ -4,8 +4,8 @@ end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local stats = addon:NewModule("ArtfulDodger_Stats", "AceEvent-3.0")
-local ppe = addon:GetModule("ArtfulDodger_PickPocketEvent")
-local jbe = addon:GetModule("ArtfulDodger_JunkboxEvent")
+local ppe = addon.PickPocketEvent
+local jbe = addon.JunkboxEvent
 
 local defaults = {
 	char = {
@@ -22,7 +22,7 @@ local defaults = {
             copper = 0
         },
         maps = {},
-        junkboxes = {},
+        junkboxes = {}
     }
 }
 
@@ -41,7 +41,7 @@ end
 function stats:OnEnable()
     stats:RegisterMessage("ArtfulDodger_PickPocketComplete", "PickPocketComplete")
     stats:RegisterMessage("ArtfulDodger_JunkboxLooted", "JunkboxLooted")
-    stats:RegisterMessage("ArtfulDodger_ResetStats", "ResetStats")
+    stats:RegisterMessage("ArtfulDodger_ResetHistory", "ResetStats")
     stats:RegisterMessage("ArtfulDodger_ResetSession", "ResetSession")
 end
 
@@ -54,7 +54,7 @@ end
 
 function stats:JunkboxLooted(message, e)
     local copper = e:GetCopperFromLoot()
-    self:AddStats(self.db.junkboxes, e.itemId, copper)
+    self:AddStats(self.db.junkboxes, copper, e.itemId)
 end
 
 function stats:ResetStats()
@@ -73,20 +73,20 @@ function stats:ResetSession()
     self.db.session.start = time()
 end
 
-function stats:AddStats(statTable, copper, mapId, npcId, npcName)
-    if mapId then
-        if statTable[mapId] == nil then
-            statTable[mapId] = {copper = 0, thefts = 0, victims = {}}
+function stats:AddStats(statTable, copper, id, npcId, npcName)
+    if id then
+        if statTable[id] == nil then
+            statTable[id] = {copper = 0, thefts = 0, victims = {}}
         end
-        statTable[mapId].copper = statTable[mapId].copper + copper
-        statTable[mapId].thefts = statTable[mapId].thefts + 1
+        statTable[id].copper = statTable[id].copper + copper
+        statTable[id].thefts = statTable[id].thefts + 1
         if npcId and npcName then
-            if statTable[mapId].victims[npcId] == nil then
-                statTable[mapId].victims[npcId] = {name = "", copper = 0, thefts = 0}
+            if statTable[id].victims[npcId] == nil then
+                statTable[id].victims[npcId] = {name = "", copper = 0, thefts = 0}
             end
-            statTable[mapId].victims[npcId].name = npcName
-            statTable[mapId].victims[npcId].copper = statTable[mapId].victims[npcId].copper + copper
-            statTable[mapId].victims[npcId].thefts = statTable[mapId].victims[npcId].thefts + 1
+            statTable[id].victims[npcId].name = npcName
+            statTable[id].victims[npcId].copper = statTable[id].victims[npcId].copper + copper
+            statTable[id].victims[npcId].thefts = statTable[id].victims[npcId].thefts + 1
         end
     else
         statTable.copper = statTable.copper + copper
@@ -242,6 +242,26 @@ function stats:GetCopperPerVictimType(npcId)
     return 0
 end
 
+function stats:GetStatsByJunkboxId(junkboxId)
+    local stats = {copper = 0, thefts = 0}
+    local junkbox = self.db.junkboxes[junkboxId]
+    if junkbox then
+        stats.copper = stats.copper + junkbox.copper
+        stats.thefts = stats.thefts + junkbox.thefts
+    end
+    return stats
+end
+
+function stats:GetStatsForJunkboxes()
+    local stats = {copper = 0, thefts = 0}
+    for _, junkbox in pairs(self.db.junkboxes) do
+        print(junkbox.copper, junkbox.thefts)
+        stats.copper = stats.copper + junkbox.copper
+        stats.thefts = stats.thefts + junkbox.thefts
+    end
+    return stats
+end
+
 function stats:GetSessionCopperPerHour()
     return addon:GetCopperPerHour(self.db.session.copper, self.db.session.duration)
 end
@@ -268,18 +288,4 @@ end
 
 function stats:GetPrettyPrintString(date, period, store, copper, count, average)
 	return string.format("\nSince |cffFFFFFF%s|r,\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
-end
-
-function stats:GetJunkboxTypes()
-    local maps = {}
-    for id, map in pairs(self.db.junkboxes) do
-        local info = C_Map.GetMapInfo(id)
-        if info then
-            maps[id] = info.name
-        end
-    end
-    
-    table.sort(maps, function(a,b) return a < b end)
-    
-    return maps
 end

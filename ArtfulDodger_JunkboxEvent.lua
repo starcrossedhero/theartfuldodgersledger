@@ -3,10 +3,11 @@ if UnitClass('player') ~= 'Rogue' then
 end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local jbe = addon:NewModule("ArtfulDodger_JunkboxEvent")
 
-JunkboxEvent = {}
-function jbe:New(eventTime, eventItemId, eventGuid, eventLoot)
+local JunkboxEvent = {}
+addon.JunkboxEvent = JunkboxEvent
+
+function JunkboxEvent:New(eventTime, eventItemId, eventGuid, eventLoot)
 	local this = {
 		timestamp = eventTime or 0,
 		itemId = eventItemId or "",
@@ -18,15 +19,15 @@ function jbe:New(eventTime, eventItemId, eventGuid, eventLoot)
 	return this
 end
 
-function jbe:CreateRow()
+function JunkboxEvent:CreateRow()
 	return {timestamp=self.timestamp, itemId=self.itemId, guid=self.guid, loot=#self.loot}
 end
 
-function jbe:ToString()
+function JunkboxEvent:ToString()
 	return string.format("JunkboxEvent: timestamp=%d, itemId=%d, guid=%s, loot=%d", self.timestamp, self.itemId, self.guid, #self.loot)
 end
 
-function jbe:GetCopperFromLoot()
+function JunkboxEvent:GetCopperFromLoot()
 	local copper = 0
 	for i = 1, #self.loot do
         local item = self.loot[i]

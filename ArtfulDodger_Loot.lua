@@ -3,15 +3,15 @@ if UnitClass('player') ~= 'Rogue' then
 end
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local loot = addon:NewModule("ArtfulDodger_Loot")
 
-local CURRENCY_ID
-local CURRENCY_COLOR = "|cFFCC9900"
-local CURRENCY_STRING = "Coin"
-local CURRENCY_LINK = CURRENCY_COLOR..CURRENCY_STRING.."|r"
-local CURRENCY_ICON_ID = "Interface\\Icons\\INV_Misc_Coin_01"
+local Loot = {}
+addon.Loot = Loot
 
-local JUNKBOXES = {
+Loot.COIN_NAME = "Coin"
+Loot.COIN_LINK = "|cFFCC9900"..Loot.COIN_NAME.."|r"
+Loot.COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
+
+Loot.JUNKBOXES = {
 	{itemId=16882, name="Battered Junkbox", icon=132594, link="\124cffffffff\124Hitem:16882::::::::70:::::\124h[Battered Junkbox]\124h\124r", price=74},
 	{itemId=16883, name="Worn Junkbox", icon=132594, link="\124cffffffff\124Hitem:16883::::::::70:::::\124h[Worn Junkbox]\124h\124r", price=124},
 	{itemId=16884, name="Sturdy Junkbox", icon=132596, link="\124cffffffff\124Hitem:16884::::::::70:::::\124h[Sturdy Junkbox]\124h\124r", price=254},
@@ -23,8 +23,7 @@ local JUNKBOXES = {
     {itemId=106895, name="Iron-Bound Junkbox", icon=132596, link="\124cffffffff\124Hitem:106895::::::::70:::::\124h[Iron-Bound Junkbox]\124h\124r", price=12786}
 }
 
-Loot = {}
-function loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
+function Loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
 	local this = {
         sourceGuid = sourceGuid,
         id = id,
@@ -40,58 +39,58 @@ function loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
 	return this
 end
 
-function loot:ToString()
-    return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", sourceGuid, id, name, link, icon, quantity, price, isItem)
+function Loot:ToString()
+    return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", self.sourceGuid or "", self.id or "", self.name or "", self.link or "", self.icon or "", self.quantity or "", self.price or "", self.isItem or "")
 end
 
-function loot:NewItem(sourceGuid, itemId, name, link, icon, quantity, price)
-    return loot:New(sourceGuid, itemId, name, link, icon, quantity, price, true)
+function Loot:NewItem(sourceGuid, itemId, name, link, icon, quantity, price)
+    return Loot:New(sourceGuid, itemId, name, link, icon, quantity, price, true)
 end
 
-function loot:NewCoin(sourceGuid, price)
-    return loot:New(sourceGuid, -1, CURRENCY_STRING, CURRENCY_LINK, CURRENCY_ICON_ID, 1, price, false)
+function Loot:NewCoin(sourceGuid, price)
+    return Loot:New(sourceGuid, nil, nil, nil, nil, 1, price, false)
 end
 
-function loot.GetDefaultJunkboxPrice(itemId)
-	for i = 1, #JUNKBOXES do
-        if JUNKBOXES[i].itemId == itemId then
-            return JUNKBOXES[i].price 
+function Loot.GetDefaultJunkboxPrice(itemId)
+	for i = 1, #Loot.JUNKBOXES do
+        if Loot.JUNKBOXES[i].itemId == itemId then
+            return Loot.JUNKBOXES[i].price 
         end
     end
 	return nil
 end
 
-function loot.IsJunkbox(itemId)
-	for i = 1, #JUNKBOXES do
-        if JUNKBOXES[i].itemId == itemId then
+function Loot.IsJunkbox(itemId)
+	for i = 1, #Loot.JUNKBOXES do
+        if Loot.JUNKBOXES[i].itemId == itemId then
             return true
         end
     end
 	return false
 end
 
-function loot.GetJunkboxList()
+function Loot.GetJunkboxList()
     local junkboxes = {}
-    for i = 1, #JUNKBOXES do
-        junkboxes[JUNKBOXES[i].itemId] = JUNKBOXES[i].name
+    for i = 1, #Loot.JUNKBOXES do
+        junkboxes[Loot.JUNKBOXES[i].itemId] = Loot.JUNKBOXES[i].name
     end
 	return junkboxes
 end
 
-function loot.GetJunkboxFromGuid(guid)
+function Loot.GetJunkboxFromGuid(guid)
     local itemIdFromGuid = C_Item.GetItemIDByGUID(guid)
-	for i = 1, #JUNKBOXES do
-        if JUNKBOXES[i].itemId == itemIdFromGuid then
-            return JUNKBOXES[i]
+	for i = 1, #Loot.JUNKBOXES do
+        if Loot.JUNKBOXES[i].itemId == itemIdFromGuid then
+            return Loot.JUNKBOXES[i]
         end
     end
 	return nil
 end
 
-function loot.GetJunkboxFromItemId(id)
-	for i = 1, #JUNKBOXES do
-        if JUNKBOXES[i].itemId == id then
-            return JUNKBOXES[i]
+function Loot.GetJunkboxFromItemId(id)
+	for i = 1, #Loot.JUNKBOXES do
+        if Loot.JUNKBOXES[i].itemId == id then
+            return Loot.JUNKBOXES[i]
         end
     end
 	return nil
