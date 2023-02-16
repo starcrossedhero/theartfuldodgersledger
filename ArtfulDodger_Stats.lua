@@ -255,7 +255,6 @@ end
 function stats:GetStatsForJunkboxes()
     local stats = {copper = 0, thefts = 0}
     for _, junkbox in pairs(self.db.junkboxes) do
-        print(junkbox.copper, junkbox.thefts)
         stats.copper = stats.copper + junkbox.copper
         stats.thefts = stats.thefts + junkbox.thefts
     end

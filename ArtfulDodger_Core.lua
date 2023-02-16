@@ -25,6 +25,12 @@ local defaults = {
             },
             tooltip = {
                 enabled = true
+            },
+            opener = {
+                position = {
+                    top = 0,
+                    left = 0
+                }
             }
 		},
 		history = {
