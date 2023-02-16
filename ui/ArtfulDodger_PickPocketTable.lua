@@ -43,7 +43,7 @@ function ppt:Fill(start, finish)
 			if self.dataSource[e] then
 				local event = self.dataSource[e]
 				local row = self:Row()
-				row:AddChild(self:Cell(date(DATE_FORMAT, event.timestamp)))
+				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))
 				row:AddChild(self:Cell(event.areaName))
 				row:AddChild(self:Cell(event.victim.name))

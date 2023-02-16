@@ -124,18 +124,13 @@ function stats:GetVictims(mapId)
 end
 
 function stats:GetAverageCoinByNpcId(npcId)
-    local copper = 0
-    local thefts = 0
-    for mapId, map in pairs(self.db.map) do
-        for npcId, victim in pairs(map.victims) do
-            if victim.copper and victim.thefts then
-                copper = copper + victim.copper
-                thefts = thefts + victim.thefts
-            end
-         end
+    for _, map in pairs(self.db.maps) do
+        local victim = map.victims[npcId]
+        if victim then 
+            return addon:GetCopperPerVictim(victim.copper, victim.thefts)
+        end
     end
-    
-    return addon:GetCopperPerVictim(copper, thefts)
+    return addon:GetCopperPerVictim(0, 0)
 end
 
 function stats:GetStatsByMapIdAndNpcId(mapId, npcId)
@@ -278,11 +273,11 @@ function stats:GetTotalCopperPerVictim()
 end
 
 function stats:GetPrettyPrintTotalLootedString()
-	return self:GetPrettyPrintString(date("%b. %d %I:%M %p", self.db.history.start), "historic", "stash", GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
+	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.history.start), "historic", "stash", GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
 end
 
 function stats:GetPrettyPrintSessionLootedString()
-	return self:GetPrettyPrintString(date("%b. %d %I:%M %p", self.db.session.start), "current", "purse", GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
+	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.session.start), "current", "purse", GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
 end
 
 function stats:GetPrettyPrintString(date, period, store, copper, count, average)

@@ -58,7 +58,7 @@ function jbt:Fill(start, finish)
 				local icons = {}
 				local totalPrice = 0
 				local row = self:Row()
-                row:AddChild(self:Cell(date(DATE_FORMAT, event.timestamp)))
+                row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:JunkboxCell(junkbox.link, junkbox.icon, junkbox.name))
 				for i = 1, #event.loot do
 					local item = event.loot[i]
