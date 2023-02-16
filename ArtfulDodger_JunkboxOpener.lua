@@ -3,9 +3,8 @@ local Opener = Addon:NewModule("ArtfulDodger_JunkboxOpener", "AceEvent-3.0")
 local Loot = Addon.Loot
 local AceGUI = LibStub("AceGUI-3.0")
 
-local frame = CreateFrame("Button", "ArtfulDodger_JunkboxOpener", UIParent, "InsecureActionButtonTemplate")
-frame:SetSize(100, 100)
-frame:SetPoint("CENTER", UIParent)
+local frame = CreateFrame("Button", "ArtfulDodger_JunkboxOpener", nil, "InsecureActionButtonTemplate")
+frame:SetSize(50, 50)
 frame:EnableMouse(true)
 frame:RegisterForClicks("RightButtonUp", "RightButtonDown")
 frame:RegisterForDrag("LeftButton")
@@ -33,18 +32,43 @@ frame:SetScript("OnDragStop", function(self, button)
 end)
 frame:Hide()
 
-local tooltip = CreateFrame("GameTooltip", "ArtfulDodger_Junkbox_Tooltip", nil, "GameTooltipTemplate")
+local tooltip = CreateFrame("GameTooltip", "ArtfulDodger_JunkboxTooltip", nil, "GameTooltipTemplate")
 tooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 
 Opener.Junkboxes = {}
 
 function Opener:OnInitialize()
     self.settings = Addon.db.settings.opener
+    if self.settings.enabled then
+        self:init()
+        self:UpdateBag(nil, 0)
+    end
+    Opener:RegisterMessage("ArtfulDodger_ToggleOpener", "Toggle")
+end
+
+function Opener:init()
     if self.settings.position.top > 0 and self.settings.position.left > 0 then
+        frame:ClearAllPoints()
         frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.settings.position.left, self.settings.position.top)
     end
     Opener:RegisterEvent("BAG_UPDATE", "UpdateBag")
-    self:UpdateBag(nil, 0)
+end
+
+function Opener:Toggle(_, enabled)
+    if enabled == self.settings.enabled then
+        return
+    end
+    if enabled then
+        self:init()
+        self:UpdateBags()
+    else
+        Opener:UnregisterEvent("BAG_UPDATE")
+        Opener.Junkboxes = {}
+        frame.bagSlot = nil
+        frame.isLocked = nil
+        frame:Hide()
+    end
+    self.settings.enabled = enabled
 end
 
 function Opener:UpdateBags()
@@ -78,7 +102,6 @@ end
 
 function Opener:UpdateButton(bagSlot, item)
     if bagSlot and item then
-        print(bagSlot, item.state.locked)
         local bag, slot = strsplit(" ", bagSlot)
         if Opener:CanUnlock(item.state) then
             frame:SetAttribute("type", "spell");
@@ -98,6 +121,8 @@ function Opener:UpdateButton(bagSlot, item)
             GameTooltip:SetPoint("TOPLEFT", frame, "BOTTOMLEFT")
             GameTooltip:ClearLines()
             GameTooltip:SetBagItem(bag, slot)
+            GameTooltip:AddLine("Right-click to pick lock or open")
+            GameTooltip:AddLine("Left-click and hold to move button")
             GameTooltip:Show()
         end)
         frame:SetScript("OnLeave", function(self, button)
@@ -145,7 +170,8 @@ function Opener:GetTooltipLines()
     local regions = {tooltip:GetRegions()}
     for _, r in ipairs(regions) do
         if r:IsObjectType("FontString") then
-            table.insert(lines, r:GetText())
+            local line = r:GetText()
+            table.insert(lines, line)
         end
     end
     return lines

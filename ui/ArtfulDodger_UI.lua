@@ -54,6 +54,14 @@ function UI:CreateSettingsDisplay()
     tooltipCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleTooltip", value) end)
 	settingsContainer:AddChild(tooltipCheckbox)
 
+	local openerCheckbox = AceGUI:Create("CheckBox")
+    openerCheckbox:SetType("checkbox")
+    openerCheckbox:SetLabel("Junkbox Opener")
+    openerCheckbox:SetDescription("Creates a button to easily unlock and open junkboxes")
+	openerCheckbox:SetValue(Addon.db.settings.opener.enabled)
+    openerCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleOpener", value) end)
+	settingsContainer:AddChild(openerCheckbox)
+
 	local resetSessionButton = AceGUI:Create("Button")
 	resetSessionButton:SetText("Reset Current Session")
 	resetSessionButton:SetWidth(200)
@@ -172,19 +180,22 @@ function UI:CreateStatsDisplay()
     container:SetHeight(150)
 
 	mapTotalLabel = AceGUI:Create("Label")
-	mapTotalLabel:SetRelativeWidth(0.3)
+	mapTotalLabel:SetRelativeWidth(0.33)
 	mapTotalLabel:SetPoint("BOTTOM")
 	mapTotalLabel:SetFontObject(GameFontNormal)
+	mapTotalLabel:SetHeight(20)
 	
 	mapAverageLabel = AceGUI:Create("Label")
-	mapAverageLabel:SetRelativeWidth(0.3)
-	mapAverageLabel:SetPoint("BOTTOM")
+	mapAverageLabel:SetRelativeWidth(0.33)
+	mapAverageLabel:SetPoint("BOTTOMRIGHT")
 	mapAverageLabel:SetFontObject(GameFontNormal)
+	mapAverageLabel:SetHeight(20)
 	
 	mapMarksLabel = AceGUI:Create("Label")
-	mapMarksLabel:SetRelativeWidth(0.3)
-	mapMarksLabel:SetPoint("BOTTOM")
+	mapMarksLabel:SetRelativeWidth(0.33)
+	mapMarksLabel:SetPoint("BOTTOMLEFT")
 	mapMarksLabel:SetFontObject(GameFontNormal)
+	mapMarksLabel:SetHeight(20)
 
     mapMarksLabel:SetText(UI:PickPocketVictimString(Stats.db.history.thefts))
     mapAverageLabel:SetText(UI:PickPocketAverageString(Addon:GetCopperPerVictim(Stats.db.history.copper, Stats.db.history.thefts)))
@@ -207,7 +218,7 @@ function UI:UpdateJunkboxStats(junkboxId)
 
 	mapMarksLabel:SetText(UI:JunkboxesOpenedString(junkboxStats.thefts))
 	mapAverageLabel:SetText(UI:JunkboxesAverageString(junkboxStats.copper, junkboxStats.thefts))
-	mapTotalLabel:SetText(UI:JunkboxesOpenedString(junkboxStats.copper))
+	mapTotalLabel:SetText(UI:JunkboxesTotalString(junkboxStats.copper))
 end
 
 function UI:UpdatePickPocketStats(mapId, npcId)
@@ -235,7 +246,7 @@ function UI:JunkboxesOpenedString(count)
 end
 
 function UI:JunkboxesTotalString(copper)
-	return string.format("|cffeec300 Junkbox coin: |cffFFFFFF%s|r", count)
+	return string.format("|cffeec300 Junkbox coin: |cffFFFFFF%s|r", GetCoinTextureString(copper))
 end
 
 function UI:JunkboxesAverageString(copper, count)

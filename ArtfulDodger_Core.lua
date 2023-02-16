@@ -16,7 +16,7 @@ local defaults = {
 
             },
             history = {
-                eventLimit = 10000
+                eventLimit = 100000
             },
             unitFrame = {
                 enabled = true,
@@ -27,6 +27,7 @@ local defaults = {
                 enabled = true
             },
             opener = {
+                enabled = true,
                 position = {
                     top = 0,
                     left = 0
