@@ -1,4 +1,4 @@
-if UnitClass('player') ~= 'Rogue' then
+if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
@@ -240,6 +240,9 @@ end
 function stats:GetStatsByJunkboxId(junkboxId)
     local stats = {copper = 0, thefts = 0}
     local junkbox = self.db.junkboxes[junkboxId]
+    for i, v in pairs(self.db.junkboxes) do
+        print(i, v)
+    end
     if junkbox then
         stats.copper = stats.copper + junkbox.copper
         stats.thefts = stats.thefts + junkbox.thefts
@@ -281,5 +284,5 @@ function stats:GetPrettyPrintSessionLootedString()
 end
 
 function stats:GetPrettyPrintString(date, period, store, copper, count, average)
-	return string.format("\nSince |cffFFFFFF%s|r,\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
+	return string.format("\nSince |cffFFFFFF%s|r\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
 end

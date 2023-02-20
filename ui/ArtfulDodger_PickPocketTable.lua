@@ -1,4 +1,4 @@
-if UnitClass('player') ~= 'Rogue' then
+if select(3, UnitClass("player")) ~= 4 then
     return
 end
 

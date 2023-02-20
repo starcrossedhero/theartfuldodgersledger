@@ -22,4 +22,5 @@ ArtfulDodger_MiniMap.lua
 ArtfulDodger_Tooltip.lua
 ArtfulDodger_UnitFrame.lua
 ArtfulDodger_ChatCommands.lua
-ArtfulDodger_JunkboxOpener.lua
+opener\ArtfulDodger_OpenerFrame.lua
+opener\ArtfulDodger_JunkboxOpener.lua

@@ -1,4 +1,4 @@
-if UnitClass('player') ~= 'Rogue' then
+if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
@@ -164,7 +164,7 @@ function UI:CreateJunkboxFilter(historyTable)
 			historyTable:DataSource(junkboxHistory)
 			historyTable:Next()
 		end
-
+		print(junkboxId)
 		UI:UpdateJunkboxStats(junkboxId)
     end)
 
