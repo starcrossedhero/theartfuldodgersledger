@@ -6,6 +6,7 @@ local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local gui = addon:GetModule("ArtfulDodger_UI")
 local stats = addon:GetModule("ArtfulDodger_Stats")
 local minimap = addon:NewModule("ArtfulDodger_MiniMap")
+local Events = addon.Events
 
 local button = LibStub("LibDBIcon-1.0")
 
@@ -52,7 +53,7 @@ end)
 
 function dataObject:OnClick(button)
     if button == "LeftButton" then
-        gui:ToggleUI()
+        addon:SendMessage(addon.Events.UI.Toggle)
     end
 end
 
@@ -76,7 +77,7 @@ end
 
 function button:OnClick(button)
     if button == "LeftButton" then
-        gui:ToggleUI()
+        addon:SendMessage(addon.Events.UI.Toggle)
     elseif button == "RightButton" then
         button:Hide("The Artful Dodger's Ledger")
     end

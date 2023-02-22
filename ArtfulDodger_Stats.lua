@@ -2,10 +2,9 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local stats = addon:NewModule("ArtfulDodger_Stats", "AceEvent-3.0")
-local ppe = addon.PickPocketEvent
-local jbe = addon.JunkboxEvent
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Stats = Addon:NewModule("ArtfulDodger_Stats", "AceEvent-3.0")
+local Events = Addon.Events
 
 local defaults = {
 	char = {
@@ -26,10 +25,10 @@ local defaults = {
     }
 }
 
-function stats:OnInitialize()
-    self.db = addon.dbo:GetNamespace("Stats", true)
+function Stats:OnInitialize()
+    self.db = Addon.dbo:GetNamespace("Stats", true)
     if self.db == nil then
-        self.db = addon.dbo:RegisterNamespace("Stats", defaults).char
+        self.db = Addon.dbo:RegisterNamespace("Stats", defaults).char
     end
     self.db.session = defaults.char.session
 	self.db.session.start = time()
@@ -38,26 +37,26 @@ function stats:OnInitialize()
 	end
 end
 
-function stats:OnEnable()
-    stats:RegisterMessage("ArtfulDodger_PickPocketComplete", "PickPocketComplete")
-    stats:RegisterMessage("ArtfulDodger_JunkboxLooted", "JunkboxLooted")
-    stats:RegisterMessage("ArtfulDodger_ResetHistory", "ResetStats")
-    stats:RegisterMessage("ArtfulDodger_ResetSession", "ResetSession")
+function Stats:OnEnable()
+    self:RegisterMessage(Events.Loot.PickPocket, "PickPocketComplete")
+    self:RegisterMessage(Events.Loot.Junkbox, "JunkboxLooted")
+    self:RegisterMessage(Events.History.Reset, "ResetStats")
+    self:RegisterMessage(Events.Session.Reset, "ResetSession")
 end
 
-function stats:PickPocketComplete(message, e)
+function Stats:PickPocketComplete(message, e)
     local copper = e:GetCopperFromLoot()
     self:AddStats(self.db.history, copper)
     self:AddStats(self.db.session, copper)
     self:AddStats(self.db.maps, copper, e.mapId, e.victim.npcId, e.victim.name)
 end
 
-function stats:JunkboxLooted(message, e)
+function Stats:JunkboxLooted(message, e)
     local copper = e:GetCopperFromLoot()
     self:AddStats(self.db.junkboxes, copper, e.itemId)
 end
 
-function stats:ResetStats()
+function Stats:ResetStats()
 	self.db.session = defaults.char.session
     self.db.history = defaults.char.history
     self.db.maps = defaults.char.maps
@@ -68,12 +67,12 @@ function stats:ResetStats()
     self.db.history.start = time
 end
 
-function stats:ResetSession()
+function Stats:ResetSession()
 	self.db.session = defaults.char.session
     self.db.session.start = time()
 end
 
-function stats:AddStats(statTable, copper, id, npcId, npcName)
+function Stats:AddStats(statTable, copper, id, npcId, npcName)
     if id then
         if statTable[id] == nil then
             statTable[id] = {copper = 0, thefts = 0, victims = {}}
@@ -94,7 +93,7 @@ function stats:AddStats(statTable, copper, id, npcId, npcName)
     end
 end
 
-function stats:GetMaps()
+function Stats:GetMaps()
     local maps = {}
     for id, map in pairs(self.db.maps) do
         local info = C_Map.GetMapInfo(id)
@@ -108,7 +107,7 @@ function stats:GetMaps()
     return maps
 end
 
-function stats:GetVictims(mapId)
+function Stats:GetVictims(mapId)
     local victims = {}
     local map = self.db.maps[mapId]
 
@@ -123,17 +122,17 @@ function stats:GetVictims(mapId)
     return victims
 end
 
-function stats:GetAverageCoinByNpcId(npcId)
+function Stats:GetAverageCoinByNpcId(npcId)
     for _, map in pairs(self.db.maps) do
         local victim = map.victims[npcId]
         if victim then 
-            return addon:GetCopperPerVictim(victim.copper, victim.thefts)
+            return Addon:GetCopperPerVictim(victim.copper, victim.thefts)
         end
     end
-    return addon:GetCopperPerVictim(0, 0)
+    return Addon:GetCopperPerVictim(0, 0)
 end
 
-function stats:GetStatsByMapIdAndNpcId(mapId, npcId)
+function Stats:GetStatsByMapIdAndNpcId(mapId, npcId)
     local stats = {copper = 0, thefts = 0}
     local map = self.db.maps[mapId]
     if map then
@@ -146,11 +145,11 @@ function stats:GetStatsByMapIdAndNpcId(mapId, npcId)
     return stats
 end
 
-function stats:GetCopperForMapAndChildrenByMapId(mapId)
-    return stats:GetCopperByMapId(mapId) + stats:GetCopperForChildMapsByMapId(mapId)
+function Stats:GetCopperForMapAndChildrenByMapId(mapId)
+    return Stats:GetCopperByMapId(mapId) + Stats:GetCopperForChildMapsByMapId(mapId)
 end
 
-function stats:GetCopperForChildMapsByMapId(mapId)
+function Stats:GetCopperForChildMapsByMapId(mapId)
     local copper = 0
     local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
     for _, childMap in ipairs(children) do
@@ -162,21 +161,22 @@ function stats:GetCopperForChildMapsByMapId(mapId)
     return copper
 end
 
-function stats:GetStatsForMapAndChildrenByMapId(mapId)
-    local copper = stats:GetStatsForMapId(mapId).copper + stats:GetStatsForChildMapsByMapId(mapId).copper
-    local thefts = stats:GetStatsForMapId(mapId).thefts + stats:GetStatsForChildMapsByMapId(mapId).thefts
-    return {copper = copper, thefts = thefts}
-end
-
-function stats:GetStatsForMapId(mapId)
+function Stats:GetStatsForMapId(mapId, includeChildren)
     local maps = self.db.maps
+    local stats = {copper = 0, thefts = 0}
     if maps[mapId] then
-        return {copper = maps[mapId].copper, thefts = maps[mapId].thefts}
+        stats.copper = stats.copper + maps[mapId].copper
+        stats.thefts = stats.thefts + maps[mapId].thefts
     end
-    return {copper = 0, thefts = 0}
+    if includeChildren then
+        local childStats = Stats:GetStatsForChildMapsByMapId(mapId)
+        stats.copper = stats.copper + childStats.copper
+        stats.thefts = stats.thefts + childStats.thefts
+    end
+    return stats
 end
 
-function stats:GetStatsForChildMapsByMapId(mapId)
+function Stats:GetStatsForChildMapsByMapId(mapId)
     local stats = {copper = 0, thefts = 0}
     local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
     for _, childMap in ipairs(children) do
@@ -189,11 +189,11 @@ function stats:GetStatsForChildMapsByMapId(mapId)
     return stats
 end
 
-function stats:GetTheftsForMapAndChildrenByMapId(mapId)
-    return stats:GetTheftsByMapId(mapId) + stats:GetTheftsForChildMapsByMapId(mapId)
+function Stats:GetTheftsForMapAndChildrenByMapId(mapId)
+    return Stats:GetTheftsByMapId(mapId) + Stats:GetTheftsForChildMapsByMapId(mapId)
 end
 
-function stats:GetTheftsForChildMapsByMapId(mapId)
+function Stats:GetTheftsForChildMapsByMapId(mapId)
     local thefts = 0
     local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
     for _, childMap in ipairs(children) do
@@ -205,7 +205,7 @@ function stats:GetTheftsForChildMapsByMapId(mapId)
     return thefts
 end
 
-function stats:GetTheftsByMapId(mapId)
+function Stats:GetTheftsByMapId(mapId)
     local maps = self.db.maps
     if maps[mapId] then
         return maps[mapId].thefts
@@ -213,7 +213,7 @@ function stats:GetTheftsByMapId(mapId)
     return 0
 end
 
-function stats:GetCopperByMapId(mapId)
+function Stats:GetCopperByMapId(mapId)
     local maps = self.db.maps
     if maps[mapId] then
         return maps[mapId].copper
@@ -221,23 +221,23 @@ function stats:GetCopperByMapId(mapId)
     return 0
 end
 
-function stats:GetCopperPerVictimByMapId(mapId)
+function Stats:GetCopperPerVictimByMapId(mapId)
 	local maps = self.db.maps
     if maps and maps[mapId] then
-	   return addon:GetCopperPerVictim(maps[mapId].copper, maps[mapId].thefts)
+	   return Addon:GetCopperPerVictim(maps[mapId].copper, maps[mapId].thefts)
     end
     return 0
 end
 
-function stats:GetCopperPerVictimType(npcId)
+function Stats:GetCopperPerVictimType(npcId)
     local victimType = self.db.map[npcId]
     if victimType then
-        return addon:GetCopperPerVictim(victimType.copper, victimType.thefts)
+        return Addon:GetCopperPerVictim(victimType.copper, victimType.thefts)
     end
     return 0
 end
 
-function stats:GetStatsByJunkboxId(junkboxId)
+function Stats:GetStatsByJunkboxId(junkboxId)
     local stats = {copper = 0, thefts = 0}
     local junkbox = self.db.junkboxes[junkboxId]
     for i, v in pairs(self.db.junkboxes) do
@@ -250,7 +250,7 @@ function stats:GetStatsByJunkboxId(junkboxId)
     return stats
 end
 
-function stats:GetStatsForJunkboxes()
+function Stats:GetStatsForJunkboxes()
     local stats = {copper = 0, thefts = 0}
     for _, junkbox in pairs(self.db.junkboxes) do
         stats.copper = stats.copper + junkbox.copper
@@ -259,30 +259,30 @@ function stats:GetStatsForJunkboxes()
     return stats
 end
 
-function stats:GetSessionCopperPerHour()
-    return addon:GetCopperPerHour(self.db.session.copper, self.db.session.duration)
+function Stats:GetSessionCopperPerHour()
+    return Addon:GetCopperPerHour(self.db.session.copper, self.db.session.duration)
 end
 
-function stats:GetTotalCopperPerHour()
-    return addon:GetCopperPerHour(self.db.history.copper, self.db.history.duration)
+function Stats:GetTotalCopperPerHour()
+    return Addon:GetCopperPerHour(self.db.history.copper, self.db.history.duration)
 end
 
-function stats:GetSessionCopperPerVictim()
-	return addon:GetCopperPerVictim(self.db.session.copper, self.db.session.thefts)
+function Stats:GetSessionCopperPerVictim()
+	return Addon:GetCopperPerVictim(self.db.session.copper, self.db.session.thefts)
 end
 
-function stats:GetTotalCopperPerVictim()
-	return addon:GetCopperPerVictim(self.db.history.copper, self.db.history.thefts)
+function Stats:GetTotalCopperPerVictim()
+	return Addon:GetCopperPerVictim(self.db.history.copper, self.db.history.thefts)
 end
 
-function stats:GetPrettyPrintTotalLootedString()
+function Stats:GetPrettyPrintTotalLootedString()
 	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.history.start), "historic", "stash", GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
 end
 
-function stats:GetPrettyPrintSessionLootedString()
+function Stats:GetPrettyPrintSessionLootedString()
 	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.session.start), "current", "purse", GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
 end
 
-function stats:GetPrettyPrintString(date, period, store, copper, count, average)
+function Stats:GetPrettyPrintString(date, period, store, copper, count, average)
 	return string.format("\nSince |cffFFFFFF%s|r\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
 end

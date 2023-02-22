@@ -2,67 +2,73 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local unit = addon:NewModule("ArtfulDodger_UnitFrame", "AceEvent-3.0", "AceTimer-3.0")
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Unit = Addon:NewModule("ArtfulDodger_UnitFrame", "AceEvent-3.0", "AceTimer-3.0")
+local Events = Addon.Events
+
 local defaults = {
 	char = {
         exclusions = {}
     }
 }
 
-function unit:OnInitialize()
-    self.db = addon.dbo:RegisterNamespace("UnitFrame", defaults).char
-    self.settings = addon.db.settings.unitFrame
+function Unit:OnInitialize()
+    self.db = Addon.dbo:RegisterNamespace("UnitFrame", defaults).char
+    self.settings = Addon.db.settings.unitFrame
     self:Register()
 end
 
-function unit:Register()
+function Unit:Register()
     if self.settings.enabled then
         self:RegisterEvent("UI_ERROR_MESSAGE")
 	    self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         self:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-        self:RegisterMessage("ArtfulDodger_PickPocketComplete", "UpdateNamePlates")
+        self:RegisterMessage(Events.Loot.PickPocket, "UpdateNamePlates")
     end
-    self:RegisterMessage("ArtfulDodger_ResetHistory", "ResetExclusions")
-    self:RegisterMessage("ArtfulDodger_ToggleUnitFrame", "ToggleUnitFrame")
+    self:RegisterMessage(Events.History.Reset, "ResetExclusions")
+    self:RegisterMessage(Events.UnitFrame.Reset, "ResetExclusions")
+    self:RegisterMessage(Events.UnitFrame.Toggle, "ToggleUnitFrame")
 end
 
-function unit:UnRegister()
+function Unit:Unregister()
     self:UnregisterEvent("UI_ERROR_MESSAGE")
 	self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
     self:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
-    self:UnregisterMessage("ArtfulDodger_PickPocketComplete", "UpdateNamePlates")
+    self:UnregisterMessage(Events.Loot.PickPocket)
+    self:UnegisterMessage(Events.UnitFrame.Reset)
 end
 
-function unit:ResetExclusions()
+function Unit:ResetExclusions()
     self.db.exclusions = defaults.char.exclusions
 end
 
-function unit:OnEnable()
+function Unit:OnEnable()
     if self.settings.enabled then
         self.updateTimer = self:ScheduleRepeatingTimer("UpdateNamePlates", self.settings.updateFrequencySeconds)
     end
 end
 
-function unit:ToggleUnitFrame(_, enabled)
+function Unit:ToggleUnitFrame(_, enabled)
     if enabled == self.settings.enabled then
         return
     end
     if enabled then
         self.updateTimer = self:ScheduleRepeatingTimer("UpdateNamePlates", self.settings.updateFrequencySeconds)
+        self:Register()
     else
         self:CancelTimer(self.updateTimer)
         self:ClearNamePlates()
+        self:Unregister()
     end
     self.settings.enabled = enabled
 end
 
-function unit:NAME_PLATE_UNIT_ADDED(event, unitId)
+function Unit:NAME_PLATE_UNIT_ADDED(event, unitId)
 
-    unit:UpdateNamePlate(unitId)
+    Unit:UpdateNamePlate(unitId)
 end
 
-function unit:NAME_PLATE_UNIT_REMOVED(event, unitId)
+function Unit:NAME_PLATE_UNIT_REMOVED(event, unitId)
     local nameplate = C_NamePlate.GetNamePlateForUnit(unitId)
     if nameplate.ArtfulDodger then
         nameplate.ArtfulDodger:Hide()
@@ -70,20 +76,20 @@ function unit:NAME_PLATE_UNIT_REMOVED(event, unitId)
     end
 end
 
-function unit:UI_ERROR_MESSAGE(event, errorType, message)
+function Unit:UI_ERROR_MESSAGE(event, errorType, message)
     if message == SPELL_FAILED_TARGET_NO_POCKETS then
         local guid = UnitGUID("target")
         if guid then
             local npcId = select(6, strsplit("-", guid))
             if npcId then
                 table.insert(self.db.exclusions, npcId)
-                unit:UpdateNamePlates()
+                Unit:UpdateNamePlates()
             end
         end
     end
 end
 
-function unit:ClearNamePlates()
+function Unit:ClearNamePlates()
     local namePlates = C_NamePlate.GetNamePlates()
     for i = 1, #namePlates do
         local namePlate = C_NamePlate.GetNamePlateForUnit(namePlates[i].namePlateUnitToken)
@@ -94,26 +100,26 @@ function unit:ClearNamePlates()
     end
 end
 
-function unit:UpdateNamePlates()
+function Unit:UpdateNamePlates()
     local namePlates = C_NamePlate.GetNamePlates()
     for i = 1, #namePlates do
-        unit:UpdateNamePlate(namePlates[i].namePlateUnitToken)
+        Unit:UpdateNamePlate(namePlates[i].namePlateUnitToken)
     end
 end
 
-function unit:UpdateNamePlate(unitId)
+function Unit:UpdateNamePlate(unitId)
     local guid = UnitGUID(unitId)
     local npcId = select(6, strsplit("-", guid))
     local namePlate = C_NamePlate.GetNamePlateForUnit(unitId)
 
-    if namePlate and UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and unit:HasPockets(npcId) then 
+    if namePlate and UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and Unit:HasPockets(npcId) then 
 
         if namePlate.ArtfulDodger == nil then
-            unit:AddTextureToNamePlate(namePlate)
+            Unit:AddTextureToNamePlate(namePlate)
         end
 
-        local victim = addon:GetLatestPickPocketByGuid(guid)
-        if victim == nil or unit:HasLootRespawned(victim) then
+        local victim = Addon:GetLatestPickPocketByGuid(guid)
+        if victim == nil or Unit:HasLootRespawned(victim) then
             namePlate.ArtfulDodger:Show()
         else
             namePlate.ArtfulDodger:Hide()
@@ -125,7 +131,7 @@ function unit:UpdateNamePlate(unitId)
     end
 end
 
-function unit:AddTextureToNamePlate(namePlate)
+function Unit:AddTextureToNamePlate(namePlate)
     namePlate.ArtfulDodger = namePlate:CreateTexture(nil, "OVERLAY")
     namePlate.ArtfulDodger:SetTexture("Interface\\Icons\\INV_Misc_Bag_11")
     namePlate.ArtfulDodger:SetSize(15,15)
@@ -133,11 +139,11 @@ function unit:AddTextureToNamePlate(namePlate)
     namePlate.ArtfulDodger:Hide()
 end
 
-function unit:HasLootRespawned(victim)
+function Unit:HasLootRespawned(victim)
     return (time() - victim.timestamp) > self.settings.lootRespawnSeconds
 end
 
-function unit:HasPockets(npcId)
+function Unit:HasPockets(npcId)
     for i = 1, #self.db.exclusions do
         if self.db.exclusions[i] == npcId then
             return false

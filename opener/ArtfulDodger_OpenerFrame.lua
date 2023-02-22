@@ -3,11 +3,9 @@ if select(3, UnitClass("player")) ~= 4 then
 end
 
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Events = Addon.Events
 local Frame = CreateFrame("Button", "ArtfulDodger_OpenerFrame", nil, "InsecureActionButtonTemplate")
 Addon.OpenerFrame = Frame
-
-Frame.BoxUpdateEvent = "ARTFULDODGER_JUNKBOXOPENER_BOXUPDATE"
-Frame.PositionUpdateEvent = "ARTFULDODGER_JUNKBOXOPENER_POSITIONUPDATE"
 
 Frame.ArtfulDodger = {}
 Frame:SetSize(50, 50)
@@ -16,7 +14,7 @@ Frame:RegisterForClicks("RightButtonUp", "RightButtonDown")
 Frame:RegisterForDrag("LeftButton")
 Frame:SetScript("PostClick", function(self, button, down) 
     if button == "RightButton" and down == false then
-        Addon:SendMessage(Frame.BoxUpdateEvent, self.ArtfulDodger.bagSlot, self.ArtfulDodger.locked)
+        Addon:SendMessage(Events.Opener.BoxUpdate, self.ArtfulDodger.bagSlot, self.ArtfulDodger.locked)
         if self.ArtfulDodger.locked then
             self.ArtfulDodger.locked = not self.ArtfulDodger.locked
         else
@@ -30,7 +28,7 @@ Frame:SetScript("OnDragStart", function(self)
 end)
 Frame:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
-    Addon:SendMessage(Frame.PositionUpdateEvent, self:GetTop(), self:GetLeft())
+    Addon:SendMessage(Events.Opener.PosUpdate, self:GetTop(), self:GetLeft())
 end)
 Frame:SetScript("OnEnter", function(self)
     if self.ArtfulDodger.bagSlot then
@@ -49,7 +47,7 @@ Frame:SetScript("OnLeave", function()
 end)
 Frame:Hide()
 
-function Frame:PickLock(bagSlot)
+function Frame:SetPickLock(bagSlot)
     local bag, slot = strsplit(" ", bagSlot)
     Frame:SetAttribute("type", "spell");
     Frame:SetAttribute("spell", "Pick Lock")
@@ -57,7 +55,7 @@ function Frame:PickLock(bagSlot)
     Frame:SetAttribute("target-slot", slot)
 end
 
-function Frame:OpenBox(bagSlot)
+function Frame:SetOpenBox(bagSlot)
     Frame:SetAttribute("type", "item")
     Frame:SetAttribute("item", bagSlot)
 end

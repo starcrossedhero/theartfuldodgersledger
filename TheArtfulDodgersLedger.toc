@@ -9,8 +9,9 @@
 
 embeds.xml
 ArtfulDodger_Core.lua
-ArtfulDodger_JunkboxEvent.lua
-ArtfulDodger_PickPocketEvent.lua
+events\ArtfulDodger_Events.lua
+events\ArtfulDodger_JunkboxEvent.lua
+events\ArtfulDodger_PickPocketEvent.lua
 ArtfulDodger_Loot.lua
 ui\ArtfulDodger_BaseTable.lua
 ui\ArtfulDodger_PickPocketTable.lua

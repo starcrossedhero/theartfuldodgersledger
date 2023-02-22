@@ -8,15 +8,16 @@ local Stats = Addon:GetModule("ArtfulDodger_Stats")
 local Loot = Addon.Loot
 local PickPocketTable = Addon.PickPocketTable
 local JunkboxTable = Addon.JunkboxTable
+local Events = Addon.Events
 local AceGUI = LibStub("AceGUI-3.0")
 
 local BASE_UI_FRAME, mapTotalLabel, mapAverageLabel, mapMarksLabel
 
-function UI:OnEnable()
-    UI.db = Addon.db
+function UI:OnInitialize()
+	UI:RegisterMessage(Events.UI.Toggle, "Toggle")
 end
 
-function UI:ToggleUI()
+function UI:Toggle()
 	if BASE_UI_FRAME then
 		BASE_UI_FRAME:Release()
 		BASE_UI_FRAME = nil
@@ -29,50 +30,68 @@ function UI:CreateSettingsDisplay()
 	local settingsContainer = AceGUI:Create("SimpleGroup")
 	settingsContainer:SetFullWidth(true)
 	settingsContainer:SetLayout("Flow")
+
+	local checkboxContainer = AceGUI:Create("SimpleGroup")
+	checkboxContainer:SetFullWidth(true)
+	checkboxContainer:SetLayout("Flow")
+
+	local buttonContainer = AceGUI:Create("SimpleGroup")
+	buttonContainer:SetFullWidth(true)
+	buttonContainer:SetLayout("Flow")
     
     local mapCheckbox = AceGUI:Create("CheckBox")
     mapCheckbox:SetType("checkbox")
     mapCheckbox:SetLabel("World Map Display")
     mapCheckbox:SetDescription("Shows map loot stats on world map")
 	mapCheckbox:SetValue(Addon.db.settings.map.enabled)
-    mapCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleMap", value) end)
-	settingsContainer:AddChild(mapCheckbox)
+    mapCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Map.Toggle, value) end)
+	checkboxContainer:AddChild(mapCheckbox)
 
 	local unitFrameCheckbox = AceGUI:Create("CheckBox")
     unitFrameCheckbox:SetType("checkbox")
     unitFrameCheckbox:SetLabel("Unit Frame Display")
     unitFrameCheckbox:SetDescription("Shows icon on UnitFrames to indicate a unit can likely be pick pocketed")
 	unitFrameCheckbox:SetValue(Addon.db.settings.unitFrame.enabled)
-    unitFrameCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleUnitFrame", value) end)
-	settingsContainer:AddChild(unitFrameCheckbox)
+    unitFrameCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.UnitFrame.Toggle, value) end)
+	checkboxContainer:AddChild(unitFrameCheckbox)
 
 	local tooltipCheckbox = AceGUI:Create("CheckBox")
     tooltipCheckbox:SetType("checkbox")
     tooltipCheckbox:SetLabel("Tooltip Display")
     tooltipCheckbox:SetDescription("Shows average purse size from victim in tooltip")
 	tooltipCheckbox:SetValue(Addon.db.settings.tooltip.enabled)
-    tooltipCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleTooltip", value) end)
-	settingsContainer:AddChild(tooltipCheckbox)
+    tooltipCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Tooltip.Toggle, value) end)
+	checkboxContainer:AddChild(tooltipCheckbox)
 
 	local openerCheckbox = AceGUI:Create("CheckBox")
     openerCheckbox:SetType("checkbox")
     openerCheckbox:SetLabel("Junkbox Opener")
     openerCheckbox:SetDescription("Creates a button to easily unlock and open junkboxes")
 	openerCheckbox:SetValue(Addon.db.settings.opener.enabled)
-    openerCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage("ArtfulDodger_ToggleOpener", value) end)
-	settingsContainer:AddChild(openerCheckbox)
+    openerCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Opener.Toggle, value) end)
+	checkboxContainer:AddChild(openerCheckbox)
 
 	local resetSessionButton = AceGUI:Create("Button")
 	resetSessionButton:SetText("Reset Current Session")
 	resetSessionButton:SetWidth(200)
-	resetSessionButton:SetCallback("OnClick", function() UI:SendMessage("ArtfulDodger_ResetSession") end)
-	settingsContainer:AddChild(resetSessionButton)
+	resetSessionButton:SetCallback("OnClick", function() UI:SendMessage(Events.Session.Reset) end)
+	buttonContainer:AddChild(resetSessionButton)
 
 	local resetHistoryButton = AceGUI:Create("Button")
 	resetHistoryButton:SetText("Reset History")
 	resetHistoryButton:SetWidth(200)
-	resetHistoryButton:SetCallback("OnClick", function() UI:SendMessage("ArtfulDodger_ResetHistory") end)
-	settingsContainer:AddChild(resetHistoryButton)
+	resetHistoryButton:SetCallback("OnClick", function() UI:SendMessage(Events.History.Reset) end)
+	buttonContainer:AddChild(resetHistoryButton)
+
+	local resetExclusionsButton = AceGUI:Create("Button")
+	resetExclusionsButton:SetText("Reset Exclusions")
+	resetExclusionsButton:SetWidth(200)
+	resetExclusionsButton:SetCallback("OnClick", function() UI:SendMessage(Events.UnitFrame.Reset) end)
+	
+	buttonContainer:AddChild(resetExclusionsButton)
+
+	settingsContainer:AddChild(checkboxContainer)
+	settingsContainer:AddChild(buttonContainer)
 
 	return settingsContainer
 end
@@ -98,7 +117,7 @@ function UI:CreateFilterSettings(historyTable)
 		local mapId = key.value
 
 		if mapId == "All" then
-			historyTable:DataSource(UI.db.history.pickpocket)
+			historyTable:DataSource(Addon.db.history.pickpocket)
 			historyTable:Next()
 			victimsDropdown:SetValue("All")
 			victimsDropdown:SetDisabled(true)
@@ -157,7 +176,7 @@ function UI:CreateJunkboxFilter(historyTable)
 		local junkboxId = key.value
 
 		if junkboxId == "All" then
-			historyTable:DataSource(UI.db.history.junkboxes)
+			historyTable:DataSource(Addon.db.history.junkboxes)
 			historyTable:Next()
 		else
 			local junkboxHistory = Addon:GetHistoryByJunkboxId(junkboxId)
@@ -272,7 +291,7 @@ function UI:CreateBaseUI()
 	tab:SetCallback("OnGroupSelected", function(container, event, group)
 		container:ReleaseChildren()
 		if 	   group == "tab1" then
-			local historyTable = PickPocketTable:New(UI.db.history.pickpocket)
+			local historyTable = PickPocketTable:New(Addon.db.history.pickpocket)
 			container:AddChild(UI:CreateFilterSettings(historyTable))
 			container:AddChild(historyTable:GetFrame())
 			container:AddChild(UI:CreateStatsDisplay())
@@ -280,7 +299,7 @@ function UI:CreateBaseUI()
 			historyTable:Next()
 			UI:UpdatePickPocketStats("All")
 		elseif group == "tab2" then
-			local junkboxTable = JunkboxTable:New(UI.db.history.junkboxes)
+			local junkboxTable = JunkboxTable:New(Addon.db.history.junkboxes)
 			container:AddChild(UI:CreateJunkboxFilter(junkboxTable))
 			container:AddChild(junkboxTable:GetFrame())
 			container:AddChild(UI:CreateStatsDisplay())
@@ -302,7 +321,7 @@ function UI:CreateBaseUI()
 	frame:SetWidth(650)
 	frame:EnableResize(false)
 	frame:SetCallback("OnClose", function(widget)
-		UI:ToggleUI()
+		UI:Toggle()
 	end)
 	frame:AddChild(tab)
 

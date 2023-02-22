@@ -3,7 +3,6 @@ if select(3, UnitClass("player")) ~= 4 then
 end
 
 local Addon = LibStub("AceAddon-3.0"):NewAddon("ArtfulDodger", "AceEvent-3.0")
-local PickPocketEvent, JunkboxEvent, Loot
 
 local defaults = {
 	char = {
@@ -13,7 +12,7 @@ local defaults = {
 				minimapPos = 136.23
 			},
             map = {
-
+                updateFrequencySeconds = 0.3
             },
             history = {
                 eventLimit = 100000
@@ -42,10 +41,6 @@ local defaults = {
 }
 
 function Addon:OnInitialize()
-    PickPocketEvent = Addon.PickPocketEvent
-    JunkboxEvent = Addon.JunkboxEvent
-    Loot = Addon.Loot
-
 	self.dbo = LibStub("AceDB-3.0"):New("ArtfulDodgerDB", defaults)
     self.db = self.dbo.char
 end
@@ -54,7 +49,7 @@ function Addon:OnEnable()
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	self:RegisterEvent("UI_ERROR_MESSAGE")
     self:RegisterEvent("LOOT_READY")
-    self:RegisterMessage("ArtfulDodger_ResetHistory", "ResetHistory")
+    self:RegisterMessage(self.Events.History.Reset, "ResetHistory")
 end
 
 function Addon:ResetHistory()
@@ -79,7 +74,7 @@ function Addon:LOOT_READY(event, slotNumber)
         local sources = {GetLootSourceInfo(slot)}
         for source = 1, #sources, 2 do
             sourceGuid = sources[source]
-            junkboxItem =  Loot.GetJunkboxFromGuid(sourceGuid)
+            junkboxItem =  self.Loot.GetJunkboxFromGuid(sourceGuid)
             pickPocketEvent = Addon:GetLatestPickPocketByGuid(sourceGuid)
             if pickPocketEvent or junkboxItem then
                 local lootIcon, lootName, lootQuantity, _, _, _, _, _, _ = GetLootSlotInfo(slot)
@@ -91,12 +86,12 @@ function Addon:LOOT_READY(event, slotNumber)
                             item:ContinueOnItemLoad(function()
                                 local itemSellPrice = select(11, GetItemInfo(lootLink))
                                 local itemId = item:GetItemID()
-                                table.insert(loot, Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, itemSellPrice))
+                                table.insert(loot, self.Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, itemSellPrice))
                             end)
                         end
                     end
                 else
-                    table.insert(loot, Loot:NewCoin(sourceGuid, self:GetCopperFromLootName(lootName)))
+                    table.insert(loot, self.Loot:NewCoin(sourceGuid, self:GetCopperFromLootName(lootName)))
                 end
             end
         end
@@ -110,10 +105,10 @@ function Addon:LOOT_READY(event, slotNumber)
 end
 
 function Addon:SaveJunkboxLoot(timestamp, sourceGuid, junkboxItem, loot)
-    local junkbox = JunkboxEvent:New(timestamp, junkboxItem.itemId, sourceGuid, loot)
+    local junkbox = self.JunkboxEvent:New(timestamp, junkboxItem.itemId, sourceGuid, loot)
     if Addon:IsJunkboxEligibleForLoot(junkbox) then
         table.insert(self.db.history.junkboxes, junkbox)
-        Addon:SendMessage("ArtfulDodger_JunkboxLooted", junkbox)
+        Addon:SendMessage(self.Events.Loot.Junkbox, junkbox)
     end
 end
 
@@ -140,7 +135,7 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(event)
             local mapId = C_Map.GetBestMapForUnit("player")
             local areaName = GetSubZoneText()
             if destNpcId and mapId then
-                local event = PickPocketEvent:New(time(), 
+                local event = self.PickPocketEvent:New(time(), 
                     {name = destName, guid = destGuid, npcId = destNpcId, level = UnitLevel("target")}, 
                     mapId,
                     areaName
@@ -176,7 +171,7 @@ end
 function Addon:SaveLootToPickPocketEvent(event, loot)
     if #event.loot < 1 then
         event.loot = loot
-        Addon:SendMessage("ArtfulDodger_PickPocketComplete", event)
+        Addon:SendMessage(self.Events.Loot.PickPocket, event)
     end
 end
 

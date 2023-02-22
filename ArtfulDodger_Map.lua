@@ -2,81 +2,86 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local stats = addon:GetModule("ArtfulDodger_Stats")
-local map = addon:NewModule("ArtfulDodger_Map", "AceEvent-3.0")
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Stats = Addon:GetModule("ArtfulDodger_Stats")
+local Map = Addon:NewModule("ArtfulDodger_Map", "AceEvent-3.0")
+local Events = Addon.Events
 
-local FRAME_UPDATE_INTERVAL = 3
-local FRAME_TIME_SINCE_LAST_UPDATE = 0
-local FRAME
+Map.timeSinceLastUpdate = 0
+Map.currentMapId = -1
 
-function map:CreateFrame()
-    local frame = CreateFrame("Frame", "ArtfulDodger_MapFrame", WorldMapFrame.ScrollContainer)
-    frame.text = frame:CreateFontString(nil, "ARTWORK", "GameFontWhite")
-    frame.text:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 5, 5)
-    frame.text:SetJustifyH("LEFT")
-    frame:SetAllPoints(frame.text)
-    
-    frame.texture = frame:CreateTexture(nil, "BACKGROUND")
-    frame.texture:SetPoint("TOPLEFT", frame.text, -5, 5)
-    frame.texture:SetPoint("BOTTOMRIGHT", frame.text, 5, -5)
-    frame.texture:SetTexture("Interface\\Buttons\\WHITE8X8")
-    frame.texture:SetVertexColor(0, 0, 0, 0.3)
-    frame:SetScript("OnUpdate", function(self, elapsed)
-        FRAME_TIME_SINCE_LAST_UPDATE = FRAME_TIME_SINCE_LAST_UPDATE + elapsed
-        if map.settings.enabled then
-            if FRAME_TIME_SINCE_LAST_UPDATE >= FRAME_UPDATE_INTERVAL then
-                if WorldMapFrame.ScrollContainer:IsVisible() and MouseIsOver(WorldMapFrame.ScrollContainer) then
-                    local cursorX, cursorY = WorldMapFrame.ScrollContainer:GetNormalizedCursorPosition()
-                    local mapId = WorldMapFrame:GetMapID()
-                    
-                    if mapId and map:IsValidCoords(cursorX, cursorY) then
-                        local mapInfo = C_Map.GetMapInfoAtPosition(mapId, cursorX, cursorY)
-                        if mapInfo then
-                            map:UpdateFrameText(mapInfo.mapID)
-                        else
-                            map:UpdateFrameText(mapId)
-                        end
+Map.Frame = CreateFrame("Frame", "ArtfulDodger_MapFrame", WorldMapFrame.ScrollContainer)
+Map.Frame:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 75, -40)
+Map.Frame:SetHeight(35)
+
+Map.Frame.text = Map.Frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+Map.Frame.text:SetAllPoints(Map.Frame)
+Map.Frame.text:SetJustifyH("CENTER")
+Map.Frame:SetWidth(math.max(Map.Frame.text:GetWidth(), 300))
+
+Map.Frame.texture = Map.Frame:CreateTexture(nil, "BACKGROUND")
+Map.Frame.texture:SetPoint("TOPLEFT", Map.Frame, -50, 10)
+Map.Frame.texture:SetPoint("BOTTOMRIGHT", Map.Frame, 50, -10)
+Map.Frame.texture:SetTexture(1115847)
+Map.Frame.texture:SetAtlas("adventureguide-pane-small")
+Map.Frame.texture:SetAlpha(0.85)
+
+Map.Frame:SetScript("OnUpdate", function(self, elapsed)
+    Map.timeSinceLastUpdate = Map.timeSinceLastUpdate + elapsed
+    if Map.timeSinceLastUpdate >= Map.settings.updateFrequencySeconds then
+        Map.timeSinceLastUpdate = 0
+        if WorldMapFrame.ScrollContainer:IsVisible() and MouseIsOver(WorldMapFrame.ScrollContainer) then
+            local cursorX, cursorY = WorldMapFrame.ScrollContainer:GetNormalizedCursorPosition()
+            local mapId = WorldMapFrame:GetMapID()
+            
+            if mapId and Map:IsValidCoords(cursorX, cursorY) then
+                local mapInfo = C_Map.GetMapInfoAtPosition(mapId, cursorX, cursorY)
+                if mapInfo then
+                    if mapInfo.mapID ~= Map.currentMapId then
+                        Map:UpdateFrameText(mapInfo.mapID)
+                        Map.currentMapId = mapInfo.mapID
+                    end
+                else
+                    if mapId ~= Map.currentMapId then
+                        Map:UpdateFrameText(mapId)
+                        Map.currentMapId = mapId
                     end
                 end
             end
         end
-    end)
-    frame:SetScript("OnShow", function(self)
-        FRAME_TIME_SINCE_LAST_UPDATE = 0
-    end)
+    end
+end)
+Map.Frame:SetScript("OnShow", function(self)
+    Map.timeSinceLastUpdate = 0
+end)
 
-    return frame
+function Map:UpdateFrameText(mapId)
+    local stats = Stats:GetStatsForMapId(mapId, true)
+    Map.Frame.text:SetText(Map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, stats.thefts, stats.copper))
 end
 
-function map:UpdateFrameText(mapId)
-    local stats = stats:GetStatsForMapAndChildrenByMapId(mapId)
-    FRAME.text:SetText(map:GeneratePrettyString(C_Map.GetMapInfo(mapId).name, stats.victims, stats.copper))
-end
-
-function map:GeneratePrettyString(name, victims, copper)
+function Map:GeneratePrettyString(name, victims, copper)
     return string.format("%s\nVictims: %d   Coin: %s", name, victims, GetCoinTextureString(copper))
 end
 
-function map:IsValidCoords(x, y)
+function Map:IsValidCoords(x, y)
     return x and y and x > 0 and y > 0
 end
 
-function map:OnEnable()
-    self.db = addon.db
-    self.settings = addon.db.settings.map
-    FRAME = map:CreateFrame()
-    self:RegisterMessage("ArtfulDodger_ToggleMap", "ToggleMap")
+function Map:OnEnable()
+    self.db = Addon.db
+    self.settings = Addon.db.settings.map
+    self:RegisterMessage(Events.Map.Toggle, "Toggle")
 end
 
-function map:ToggleMap(_, enabled)
+function Map:Toggle(_, enabled)
     if enabled == self.settings.enabled then
         return
     end
     if enabled then
-        FRAME:Show()
+        Map.Frame:Show()
     else
-        FRAME:Hide()
+        Map.Frame:Hide()
     end
     self.settings.enabled = enabled
 end
