@@ -40,7 +40,8 @@ function Loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
 end
 
 function Loot:ToString()
-    return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", self.sourceGuid or "", self.id or "", self.name or "", self.link or "", self.icon or "", self.quantity or "", self.price or "", self.isItem or "")
+    return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", 
+        self.sourceGuid or "", self.id or "", self.name or "", self.link or "", self.icon or "", self.quantity or "", self.price or "", self.isItem or "")
 end
 
 function Loot:NewItem(sourceGuid, itemId, name, link, icon, quantity, price)

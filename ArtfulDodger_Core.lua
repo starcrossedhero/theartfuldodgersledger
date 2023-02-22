@@ -9,9 +9,11 @@ local defaults = {
 		settings = {
 			minimap = {
 				hide = false,
-				minimapPos = 136.23
+				minimapPos = 136.23,
+                updateFrequencySeconds = 5
 			},
             map = {
+                enabled = true,
                 updateFrequencySeconds = 0.3
             },
             history = {
@@ -128,8 +130,8 @@ function Addon:IsJunkboxEligibleForLoot(junkboxEvent)
 end
 
 function Addon:COMBAT_LOG_EVENT_UNFILTERED(event)
-	local timestamp, subEvent, _, sourceGuid, sourceName, _, _, destGuid, destName, _, _, _, spellName = CombatLogGetCurrentEventInfo()
-	if self:IsNewPickPocketEvent(sourceName, subEvent, spellName) then
+	local timestamp, subEvent, _, sourceGuid, sourceName, _, _, destGuid, destName, _, _, spellId, spellName = CombatLogGetCurrentEventInfo()
+	if self:IsNewPickPocketEvent(sourceGuid, spellId) then
 		if subEvent == "SPELL_CAST_SUCCESS" then
             local destNpcId = strsplittable("-", destGuid)[6]
             local mapId = C_Map.GetBestMapForUnit("player")
@@ -161,8 +163,8 @@ function Addon:SavePickPocketEvent(event)
     end
 end
 
-function Addon:IsNewPickPocketEvent(sourceName, subEvent, spellName)
-	if sourceName == UnitName("player") and spellName == "Pick Pocket" then
+function Addon:IsNewPickPocketEvent(sourceGuid, spellId)
+	if spellId == 921 and sourceGuid == UnitGUID("player") then
 		return true
 	end
 	return false

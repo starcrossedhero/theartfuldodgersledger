@@ -145,22 +145,6 @@ function Stats:GetStatsByMapIdAndNpcId(mapId, npcId)
     return stats
 end
 
-function Stats:GetCopperForMapAndChildrenByMapId(mapId)
-    return Stats:GetCopperByMapId(mapId) + Stats:GetCopperForChildMapsByMapId(mapId)
-end
-
-function Stats:GetCopperForChildMapsByMapId(mapId)
-    local copper = 0
-    local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
-    for _, childMap in ipairs(children) do
-        local childMapStats = self.db.maps[childMap.mapID]
-        if childMapStats then
-            copper = copper + childMapStats.copper
-        end
-    end
-    return copper
-end
-
 function Stats:GetStatsForMapId(mapId, includeChildren)
     local maps = self.db.maps
     local stats = {copper = 0, thefts = 0}
@@ -187,54 +171,6 @@ function Stats:GetStatsForChildMapsByMapId(mapId)
         end
     end
     return stats
-end
-
-function Stats:GetTheftsForMapAndChildrenByMapId(mapId)
-    return Stats:GetTheftsByMapId(mapId) + Stats:GetTheftsForChildMapsByMapId(mapId)
-end
-
-function Stats:GetTheftsForChildMapsByMapId(mapId)
-    local thefts = 0
-    local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
-    for _, childMap in ipairs(children) do
-        local childMapStats = self.db.maps[childMap.mapID]
-        if childMapStats then
-            thefts = thefts + childMapStats.thefts
-        end
-    end
-    return thefts
-end
-
-function Stats:GetTheftsByMapId(mapId)
-    local maps = self.db.maps
-    if maps[mapId] then
-        return maps[mapId].thefts
-    end
-    return 0
-end
-
-function Stats:GetCopperByMapId(mapId)
-    local maps = self.db.maps
-    if maps[mapId] then
-        return maps[mapId].copper
-    end
-    return 0
-end
-
-function Stats:GetCopperPerVictimByMapId(mapId)
-	local maps = self.db.maps
-    if maps and maps[mapId] then
-	   return Addon:GetCopperPerVictim(maps[mapId].copper, maps[mapId].thefts)
-    end
-    return 0
-end
-
-function Stats:GetCopperPerVictimType(npcId)
-    local victimType = self.db.map[npcId]
-    if victimType then
-        return Addon:GetCopperPerVictim(victimType.copper, victimType.thefts)
-    end
-    return 0
 end
 
 function Stats:GetStatsByJunkboxId(junkboxId)

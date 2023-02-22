@@ -5,7 +5,7 @@
 ## OptionalDeps: Ace3
 ## X-Embeds: Ace3
 ## Author: starcrossedhero
-## Version: 0.5
+## Version: 0.6
 
 embeds.xml
 ArtfulDodger_Core.lua
@@ -13,15 +13,15 @@ events\ArtfulDodger_Events.lua
 events\ArtfulDodger_JunkboxEvent.lua
 events\ArtfulDodger_PickPocketEvent.lua
 ArtfulDodger_Loot.lua
-ui\ArtfulDodger_BaseTable.lua
-ui\ArtfulDodger_PickPocketTable.lua
-ui\ArtfulDodger_JunkboxTable.lua
 ArtfulDodger_Stats.lua
-ArtfulDodger_Map.lua
-ui\ArtfulDodger_UI.lua
-ArtfulDodger_MiniMap.lua
-ArtfulDodger_Tooltip.lua
-ArtfulDodger_UnitFrame.lua
 ArtfulDodger_ChatCommands.lua
 opener\ArtfulDodger_OpenerFrame.lua
 opener\ArtfulDodger_JunkboxOpener.lua
+ui\resources\ArtfulDodger_BaseTable.lua
+ui\resources\ArtfulDodger_PickPocketTable.lua
+ui\resources\ArtfulDodger_JunkboxTable.lua
+ui\ArtfulDodger_Map.lua
+ui\ArtfulDodger_UI.lua
+ui\ArtfulDodger_MiniMap.lua
+ui\ArtfulDodger_Tooltip.lua
+ui\ArtfulDodger_UnitFrame.lua
