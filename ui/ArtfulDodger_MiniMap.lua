@@ -30,6 +30,7 @@ function Minimap:OnEnable()
     self.settings = Addon.db.settings.minimap
     self.Button:Register(Minimap.Title, Minimap.Datasource, self.settings)
     self:RegisterMessage(Events.Minimap.Toggle, "Toggle")
+    --self:RegisterMessage(Events.Session.Reset, "Reset")
 end
 
 function Minimap:Toggle(_, hide)
@@ -44,7 +45,17 @@ function Minimap:Toggle(_, hide)
     self.settings.hide = hide
 end
 
-Minimap.Display = CreateFrame("Frame") 
+function Minimap:Reset()
+    print(Stats.db.session.thefts, Stats.db.session.copper, Stats.db.session.start)
+    self.Datasource.text = string.format(Minimap.StatusString, 
+        Stats.db.session.thefts,
+        GetCoinTextureString(Stats.db.session.copper),
+        GetCoinTextureString(Stats:GetSessionCopperPerHour()),
+        GetCoinTextureString(Stats:GetSessionCopperPerVictim())
+    )
+end
+
+Minimap.Display = CreateFrame("Frame", "ArtfulDodger_MinimapUpdate") 
 Minimap.Display:SetScript("OnUpdate", function(self, elapsed)
     Minimap.timeSinceLastUpdate = Minimap.timeSinceLastUpdate + elapsed
     if Minimap.timeSinceLastUpdate > Minimap.settings.updateFrequencySeconds then
@@ -66,25 +77,12 @@ function Minimap.Datasource:OnClick(type)
     if type == "LeftButton" then
         Addon:SendMessage(Addon.Events.UI.Toggle)
     elseif type == "RightButton" then
-        Minimap.Button:Hide(Minimap.Title)
-        Minimap.settings.hide = true
+        Minimap:Toggle(nil, not Minimap.settings.hide)
     end
 end
 
 function Minimap.Datasource:OnTooltipShow()
     self:AddLine("The Artful Dodger's Ledger")
     self:AddLine("")
-    self:AddLine(Stats:GetPrettyPrintSessionLootedString())
-end
-
-function Minimap.Datasource:OnEnter()
-	GameTooltip:SetOwner(self, "ANCHOR_NONE")
-	GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMLEFT")
-	GameTooltip:ClearLines()
-	Minimap.Datasource.OnTooltipShow(GameTooltip)
-	GameTooltip:Show()
-end
-
-function Minimap.Datasource:OnLeave()
-	GameTooltip:Hide()
+    self:AddLine(Stats:GetPrettyPrintTotalLootedString())
 end

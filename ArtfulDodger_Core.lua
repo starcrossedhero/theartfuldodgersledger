@@ -10,7 +10,7 @@ local defaults = {
 			minimap = {
 				hide = false,
 				minimapPos = 136.23,
-                updateFrequencySeconds = 5
+                updateFrequencySeconds = 1
 			},
             map = {
                 enabled = true,
@@ -42,6 +42,21 @@ local defaults = {
 	}
 }
 
+function Addon.ShallowCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            print(orig_key, orig_value)
+            copy[orig_key] = orig_value
+        end
+    else
+        copy = orig
+    end
+    return copy
+end
+
 function Addon:OnInitialize()
 	self.dbo = LibStub("AceDB-3.0"):New("ArtfulDodgerDB", defaults)
     self.db = self.dbo.char
@@ -55,8 +70,7 @@ function Addon:OnEnable()
 end
 
 function Addon:ResetHistory()
-	self.db.history.pickpocket = defaults.char.history.pickpocket
-    self.db.history.junkboxes = defaults.char.history.junkboxes
+	self.db.history = self.ShallowCopy(defaults.char.history)
 end
 
 function Addon:UI_ERROR_MESSAGE(event, errorType, message)

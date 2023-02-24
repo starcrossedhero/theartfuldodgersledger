@@ -24,7 +24,7 @@ Map.Frame.texture:SetPoint("TOPLEFT", Map.Frame, -50, 10)
 Map.Frame.texture:SetPoint("BOTTOMRIGHT", Map.Frame, 50, -10)
 Map.Frame.texture:SetTexture(1115847)
 Map.Frame.texture:SetAtlas("adventureguide-pane-small")
-Map.Frame.texture:SetAlpha(0.85)
+Map.Frame.texture:SetAlpha(0.95)
 
 Map.Frame:SetScript("OnUpdate", function(self, elapsed)
     Map.timeSinceLastUpdate = Map.timeSinceLastUpdate + elapsed

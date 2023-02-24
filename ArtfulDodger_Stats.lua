@@ -20,17 +20,17 @@ local defaults = {
             thefts = 0,
             copper = 0
         },
-        maps = {},
-        junkboxes = {}
+        junkboxes = {},
+        maps = {}
     }
 }
 
+Stats.Default = Addon.ShallowCopy
+
 function Stats:OnInitialize()
-    self.db = Addon.dbo:GetNamespace("Stats", true)
-    if self.db == nil then
-        self.db = Addon.dbo:RegisterNamespace("Stats", defaults).char
-    end
-    self.db.session = defaults.char.session
+    self.dbo = Addon.dbo:RegisterNamespace("Stats", defaults)
+    self.db = self.dbo.char
+    self.db.session = Stats.Default(defaults.char.session)
 	self.db.session.start = time()
 	if self.db.history.start <= 0 then
 		self.db.history.start = self.db.session.start
@@ -40,7 +40,7 @@ end
 function Stats:OnEnable()
     self:RegisterMessage(Events.Loot.PickPocket, "PickPocketComplete")
     self:RegisterMessage(Events.Loot.Junkbox, "JunkboxLooted")
-    self:RegisterMessage(Events.History.Reset, "ResetStats")
+    self:RegisterMessage(Events.History.Reset, "Reset")
     self:RegisterMessage(Events.Session.Reset, "ResetSession")
 end
 
@@ -56,11 +56,11 @@ function Stats:JunkboxLooted(message, e)
     self:AddStats(self.db.junkboxes, copper, e.itemId)
 end
 
-function Stats:ResetStats()
-	self.db.session = defaults.char.session
-    self.db.history = defaults.char.history
-    self.db.maps = defaults.char.maps
-    self.db.junkboxes = defaults.char.junkboxes
+function Stats:Reset()
+	self.db.session = Stats.Default(defaults.char.session)
+    self.db.history = Stats.Default(defaults.char.history)
+    self.db.maps = {}
+    self.db.junkboxes = {}
 
     local time = time()
     self.db.session.start = time
@@ -68,7 +68,7 @@ function Stats:ResetStats()
 end
 
 function Stats:ResetSession()
-	self.db.session = defaults.char.session
+	self.db.session = Stats.Default(defaults.char.session)
     self.db.session.start = time()
 end
 
