@@ -8,9 +8,17 @@ local Events = Addon.Events
 
 local defaults = {
 	char = {
-        exclusions = {}
+        exclusions = {},
     }
 }
+
+Unit.DefaultExclusions = function()
+    return Addon.ShallowCopy(defaults.char.exclusions)
+end
+
+-- tracking pickpockets locally to help nameplates stay accurate when history is reset
+-- logging out, restarting, or /reload will still cause nameplate icons to show on already pick pocketed targets
+local recentPickpockets = {}
 
 function Unit:OnInitialize()
     self.db = Addon.dbo:RegisterNamespace("UnitFrame", defaults).char
@@ -39,7 +47,7 @@ function Unit:Unregister()
 end
 
 function Unit:ResetExclusions()
-    self.db.exclusions = defaults.char.exclusions
+    self.db.exclusions = Unit.DefaultExclusions()
 end
 
 function Unit:OnEnable()
@@ -85,6 +93,12 @@ function Unit:UI_ERROR_MESSAGE(event, errorType, message)
                 Unit:UpdateNamePlates()
             end
         end
+    elseif message == ERR_ALREADY_PICKPOCKETED then
+        local guid = UnitGUID("target")
+        if guid then
+            recentPickpockets[guid] = {timestamp = time()}
+        end
+        Unit:UpdateNamePlates()
     end
 end
 
@@ -111,14 +125,13 @@ function Unit:UpdateNamePlate(unitId)
     local npcId = select(6, strsplit("-", guid))
     local namePlate = C_NamePlate.GetNamePlateForUnit(unitId)
 
-    if namePlate and UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and Unit:HasPockets(npcId) then 
+    if namePlate and UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and self:HasPockets(npcId) then 
 
         if namePlate.ArtfulDodger == nil then
-            Unit:AddTextureToNamePlate(namePlate)
+            self:AddTextureToNamePlate(namePlate)
         end
 
-        local victim = Addon:GetLatestPickPocketByGuid(guid)
-        if victim == nil or Unit:HasLootRespawned(victim) then
+        if self:EligibleForPickpocket(guid) then
             namePlate.ArtfulDodger:Show()
         else
             namePlate.ArtfulDodger:Hide()
@@ -126,6 +139,7 @@ function Unit:UpdateNamePlate(unitId)
     else
         if namePlate and namePlate.ArtfulDodger then
             namePlate.ArtfulDodger:Hide()
+            namePlate.ArtfulDodger = nil
         end
     end
 end
@@ -136,6 +150,18 @@ function Unit:AddTextureToNamePlate(namePlate)
     namePlate.ArtfulDodger:SetSize(15,15)
     namePlate.ArtfulDodger:SetPoint("RIGHT", 5, 0)
     namePlate.ArtfulDodger:Hide()
+end
+
+function Unit:EligibleForPickpocket(guid)
+    local victim = Addon:GetLatestPickPocketByGuid(guid) or recentPickpockets[guid]
+    if victim then
+        if self:HasLootRespawned(victim) then
+            recentPickpockets[guid] = nil
+            return true
+        end
+        return false
+    end
+    return true
 end
 
 function Unit:HasLootRespawned(victim)
@@ -149,4 +175,12 @@ function Unit:HasPockets(npcId)
         end
     end
     return true
+end
+
+function Unit:AlreadyPickpocketed(unitGuid)
+    local unit = recentPickpockets[unitGuid]
+    if unit then
+        return true
+    end
+    return false
 end

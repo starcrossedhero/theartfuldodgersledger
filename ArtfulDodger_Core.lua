@@ -42,13 +42,16 @@ local defaults = {
 	}
 }
 
+Addon.DefaultHistory = function()
+    return Addon.ShallowCopy(defaults.char.history)
+end
+
 function Addon.ShallowCopy(orig)
     local orig_type = type(orig)
     local copy
     if orig_type == 'table' then
         copy = {}
         for orig_key, orig_value in pairs(orig) do
-            print(orig_key, orig_value)
             copy[orig_key] = orig_value
         end
     else
@@ -66,11 +69,11 @@ function Addon:OnEnable()
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	self:RegisterEvent("UI_ERROR_MESSAGE")
     self:RegisterEvent("LOOT_READY")
-    self:RegisterMessage(self.Events.History.Reset, "ResetHistory")
+    self:RegisterMessage(self.Events.History.Reset, "Reset")
 end
 
-function Addon:ResetHistory()
-	self.db.history = self.ShallowCopy(defaults.char.history)
+function Addon:Reset()
+	self.db.history = self.DefaultHistory()
 end
 
 function Addon:UI_ERROR_MESSAGE(event, errorType, message)

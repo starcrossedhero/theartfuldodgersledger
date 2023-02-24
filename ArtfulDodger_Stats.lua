@@ -25,12 +25,18 @@ local defaults = {
     }
 }
 
-Stats.Default = Addon.ShallowCopy
+Stats.DefaultSession = function()
+    return Addon.ShallowCopy(defaults.char.session)
+end
+
+Stats.DefaultHistory = function()
+    return Addon.ShallowCopy(defaults.char.history)
+end
 
 function Stats:OnInitialize()
     self.dbo = Addon.dbo:RegisterNamespace("Stats", defaults)
     self.db = self.dbo.char
-    self.db.session = Stats.Default(defaults.char.session)
+    self.db.session = self.DefaultSession()
 	self.db.session.start = time()
 	if self.db.history.start <= 0 then
 		self.db.history.start = self.db.session.start
@@ -57,8 +63,8 @@ function Stats:JunkboxLooted(message, e)
 end
 
 function Stats:Reset()
-	self.db.session = Stats.Default(defaults.char.session)
-    self.db.history = Stats.Default(defaults.char.history)
+	self.db.session = self.DefaultSession()
+    self.db.history = self.DefaultHistory()
     self.db.maps = {}
     self.db.junkboxes = {}
 
@@ -68,7 +74,7 @@ function Stats:Reset()
 end
 
 function Stats:ResetSession()
-	self.db.session = Stats.Default(defaults.char.session)
+	self.db.session = self.DefaultSession()
     self.db.session.start = time()
 end
 
