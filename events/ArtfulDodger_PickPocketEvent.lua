@@ -2,10 +2,10 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 
 local PickPocketEvent = {}
-addon.PickPocketEvent = PickPocketEvent 
+Addon.PickPocketEvent = PickPocketEvent 
 
 function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
 	local this = {

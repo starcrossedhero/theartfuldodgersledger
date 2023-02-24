@@ -2,10 +2,10 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 
 local JunkboxEvent = {}
-addon.JunkboxEvent = JunkboxEvent
+Addon.JunkboxEvent = JunkboxEvent
 
 function JunkboxEvent:New(eventTime, eventItemId, eventGuid, eventLoot)
 	local this = {

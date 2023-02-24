@@ -11,16 +11,17 @@ Loot.COIN_NAME = "Coin"
 Loot.COIN_LINK = "|cFFCC9900"..Loot.COIN_NAME.."|r"
 Loot.COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
 
+--prices pulled from wowhead
 Loot.JUNKBOXES = {
-	{itemId=16882, name="Battered Junkbox", icon=132594, link="\124cffffffff\124Hitem:16882::::::::70:::::\124h[Battered Junkbox]\124h\124r", price=74},
-	{itemId=16883, name="Worn Junkbox", icon=132594, link="\124cffffffff\124Hitem:16883::::::::70:::::\124h[Worn Junkbox]\124h\124r", price=124},
-	{itemId=16884, name="Sturdy Junkbox", icon=132596, link="\124cffffffff\124Hitem:16884::::::::70:::::\124h[Sturdy Junkbox]\124h\124r", price=254},
-	{itemId=16885, name="Heavy Junkbox", icon=132596, link="\124cffffffff\124Hitem:16885::::::::70:::::\124h[Heavy Junkbox]\124h\124r", price=376},
-    {itemId=63349, name="Flame-Scarred Junkbox", icon=132597, link="\124cffffffff\124Hitem:63349::::::::70:::::\124h[Flame-Scarred Junkbox]\124h\124r", price=1196},
-    {itemId=43575, name="Reinforced Junkbox", icon=132597, link="\124cffffffff\124Hitem:43575::::::::70:::::\124h[Reinforced Junkbox]\124h\124r", price=376},
-    {itemId=29569, name="Strong Junkbox", icon=132595, link="\124cffffffff\124Hitem:29569::::::::70:::::\124h[Strong Junkbox]\124h\124r", price=371},
-    {itemId=88165, name="Vine-Cracked Junkbox", icon=132596, link="\124cffffffff\124Hitem:88165::::::::70:::::\124h[Vine-Cracked Junkbox]\124h\124r", price=12786},
-    {itemId=106895, name="Iron-Bound Junkbox", icon=132596, link="\124cffffffff\124Hitem:106895::::::::70:::::\124h[Iron-Bound Junkbox]\124h\124r", price=12786}
+	{itemId=16882, price=74},
+	{itemId=16883, price=124},
+	{itemId=16884, price=254},
+	{itemId=16885, price=376},
+    {itemId=63349, price=1196},
+    {itemId=43575, price=376},
+    {itemId=29569, price=371},
+    {itemId=88165, price=12786},
+    {itemId=106895, price=12786}
 }
 
 function Loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
@@ -50,6 +51,19 @@ end
 
 function Loot:NewCoin(sourceGuid, price)
     return Loot:New(sourceGuid, nil, nil, nil, nil, 1, price, false)
+end
+
+function Loot:CacheJunkboxInfo()
+    for i = 1, #Loot.JUNKBOXES do
+        if not Loot.JUNKBOXES[i].name then
+            local item = Item:CreateFromItemID(Loot.JUNKBOXES[i].itemId)
+            item:ContinueOnItemLoad(function()
+                Loot.JUNKBOXES[i].name = item:GetItemName() 
+                Loot.JUNKBOXES[i].icon = item:GetItemIcon()
+                Loot.JUNKBOXES[i].link = item:GetItemLink()
+            end)
+        end
+    end
 end
 
 function Loot.GetDefaultJunkboxPrice(itemId)
@@ -96,3 +110,5 @@ function Loot.GetJunkboxFromItemId(id)
     end
 	return nil
 end
+
+Loot:CacheJunkboxInfo()
