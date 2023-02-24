@@ -5,6 +5,7 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Unit = Addon:NewModule("ArtfulDodger_UnitFrame", "AceEvent-3.0", "AceTimer-3.0")
 local Events = Addon.Events
+local L = Addon.Localizations
 
 local defaults = {
 	char = {
@@ -125,7 +126,7 @@ function Unit:UpdateNamePlate(unitId)
     local npcId = select(6, strsplit("-", guid))
     local namePlate = C_NamePlate.GetNamePlateForUnit(unitId)
 
-    if namePlate and UnitCreatureType(unitId) == "Humanoid" and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and self:HasPockets(npcId) then 
+    if namePlate and UnitCreatureType(unitId) == L["Humanoid"] and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and self:HasPockets(npcId) then 
 
         if namePlate.ArtfulDodger == nil then
             self:AddTextureToNamePlate(namePlate)
