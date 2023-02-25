@@ -21,7 +21,7 @@ local defaults = {
             },
             unitFrame = {
                 enabled = true,
-                lootRespawnSeconds = 420,
+                lootRespawnSeconds = 480,
                 updateFrequencySeconds = 5
             },
             tooltip = {
@@ -82,7 +82,7 @@ function Addon:UI_ERROR_MESSAGE(event, errorType, message)
 		message == SPELL_FAILED_TARGET_NO_POCKETS or 
 		message == SPELL_FAILED_ONLY_STEALTHED or 
 		message == SPELL_FAILED_ONLY_SHAPESHIFT) then
-        table.remove(self.db.history.pickpocket, #self.db.history.pickpocket)
+        table.remove(self.db.history.pickpocket)
     end
 end
 
@@ -176,7 +176,8 @@ function Addon:GetLatestPickPocketByGuid(guid)
 end
 
 function Addon:SavePickPocketEvent(event)
-    if self.db.settings.history.eventLimit >= #self.db.history.pickpocket then
+    if event and self.db.settings.history.eventLimit >= #self.db.history.pickpocket then
+        Addon:SendMessage(self.Events.Loot.PickPocketAttempt, event)
         table.insert(self.db.history.pickpocket, event)
     end
 end
@@ -191,7 +192,7 @@ end
 function Addon:SaveLootToPickPocketEvent(event, loot)
     if #event.loot < 1 then
         event.loot = loot
-        Addon:SendMessage(self.Events.Loot.PickPocket, event)
+        Addon:SendMessage(self.Events.Loot.PickPocketComplete, event)
     end
 end
 

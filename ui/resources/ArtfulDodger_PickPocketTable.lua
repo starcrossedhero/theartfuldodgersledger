@@ -50,8 +50,8 @@ function PickPocketTable:Fill(start, finish)
 	if self.dataSource and self.scrollGroup then
 		self.scrollFrame:ReleaseChildren()
 		for e = start, finish, -1 do
-			if self.dataSource[e] then
-				local event = self.dataSource[e]
+			local event = self.dataSource[e]
+			if event then
 				local row = self:Row()
 				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))

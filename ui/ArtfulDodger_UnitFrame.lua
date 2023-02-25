@@ -32,7 +32,8 @@ function Unit:Register()
         self:RegisterEvent("UI_ERROR_MESSAGE")
 	    self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         self:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-        self:RegisterMessage(Events.Loot.PickPocket, "UpdateNamePlates")
+        self:RegisterMessage(Events.Loot.PickPocketAttempt, "HandleAttempt")
+        self:RegisterMessage(Events.Loot.PickPocketComplete, "UpdateNamePlates")
     end
     self:RegisterMessage(Events.History.Reset, "ResetExclusions")
     self:RegisterMessage(Events.UnitFrame.Reset, "ResetExclusions")
@@ -43,8 +44,17 @@ function Unit:Unregister()
     self:UnregisterEvent("UI_ERROR_MESSAGE")
 	self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
     self:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
-    self:UnregisterMessage(Events.Loot.PickPocket)
+    self:UnregisterMessage(Events.Loot.PickPocketAttempt)
+    self:UnregisterMessage(Events.Loot.PickPocketComplete)
     self:UnegisterMessage(Events.UnitFrame.Reset)
+end
+
+function Unit:HandleAttempt(event)
+    local victim = event.victim
+    if victim then
+        recentPickpockets[victim.guid] = {timestamp = time()}
+        self:UpdateNamePlates()
+    end
 end
 
 function Unit:ResetExclusions()
@@ -97,7 +107,9 @@ function Unit:UI_ERROR_MESSAGE(event, errorType, message)
     elseif message == ERR_ALREADY_PICKPOCKETED then
         local guid = UnitGUID("target")
         if guid then
-            recentPickpockets[guid] = {timestamp = time()}
+            if not recentPickpockets[guid] then
+                recentPickpockets[guid] = {timestamp = time()}
+            end
         end
         Unit:UpdateNamePlates()
     end
@@ -126,7 +138,7 @@ function Unit:UpdateNamePlate(unitId)
     local npcId = select(6, strsplit("-", guid))
     local namePlate = C_NamePlate.GetNamePlateForUnit(unitId)
 
-    if namePlate and UnitCreatureType(unitId) == L["Humanoid"] and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and self:HasPockets(npcId) then 
+    if namePlate and self:IsValidCreatureType(unitId) and not UnitIsPlayer(unitId) and not UnitIsFriend("player", unitId) and self:HasPockets(npcId) then 
 
         if namePlate.ArtfulDodger == nil then
             self:AddTextureToNamePlate(namePlate)
@@ -135,6 +147,7 @@ function Unit:UpdateNamePlate(unitId)
         if self:EligibleForPickpocket(guid) then
             namePlate.ArtfulDodger:Show()
         else
+            recentPickpockets[guid] = {timestamp = time()}
             namePlate.ArtfulDodger:Hide()
         end
     else
@@ -143,6 +156,11 @@ function Unit:UpdateNamePlate(unitId)
             namePlate.ArtfulDodger = nil
         end
     end
+end
+
+function Unit:IsValidCreatureType(unitId)
+    local creatureType = UnitCreatureType(unitId)
+    return creatureType == L["Humanoid"] or creatureType == L["Dragonkin"]
 end
 
 function Unit:AddTextureToNamePlate(namePlate)
@@ -154,9 +172,9 @@ function Unit:AddTextureToNamePlate(namePlate)
 end
 
 function Unit:EligibleForPickpocket(guid)
-    local victim = Addon:GetLatestPickPocketByGuid(guid) or recentPickpockets[guid]
-    if victim then
-        if self:HasLootRespawned(victim) then
+    local event = Addon:GetLatestPickPocketByGuid(guid) or recentPickpockets[guid]
+    if event then
+        if self:HasLootRespawned(event) then
             recentPickpockets[guid] = nil
             return true
         end
@@ -165,8 +183,8 @@ function Unit:EligibleForPickpocket(guid)
     return true
 end
 
-function Unit:HasLootRespawned(victim)
-    return (time() - victim.timestamp) > self.settings.lootRespawnSeconds
+function Unit:HasLootRespawned(event)
+    return (time() - event.timestamp) > self.settings.lootRespawnSeconds
 end
 
 function Unit:HasPockets(npcId)
@@ -176,12 +194,4 @@ function Unit:HasPockets(npcId)
         end
     end
     return true
-end
-
-function Unit:AlreadyPickpocketed(unitGuid)
-    local unit = recentPickpockets[unitGuid]
-    if unit then
-        return true
-    end
-    return false
 end

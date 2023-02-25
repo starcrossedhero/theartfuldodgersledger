@@ -19,7 +19,8 @@ Addon.Events = Events
 Events.History.Reset    = "ARTFULDODGER_RESET_HISTORY"
 Events.Session.Reset    = "ARTFULDODGER_RESET_SESSION"
 
-Events.Loot.PickPocket  = "ARTFULDODGER_LOOT_PICKPOCKET"
+Events.Loot.PickPocketAttempt  = "ARTFULDODGER_LOOT_PICKPOCKET_ATTEMPT"
+Events.Loot.PickPocketComplete  = "ARTFULDODGER_LOOT_PICKPOCKET_COMPLETE"
 Events.Loot.Junkbox     = "ARTFULDODGER_LOOT_JUNKBOX"
 
 Events.Map.Toggle       = "ARTFULDODGER_MAP_TOGGLE"

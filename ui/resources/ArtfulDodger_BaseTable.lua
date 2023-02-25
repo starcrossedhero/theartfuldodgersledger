@@ -14,7 +14,6 @@ Addon.BaseTable = bt
 bt.DATE_FORMAT = "%Y/%m/%d %H:%M:%S"
 
 function bt:New(dataSource, headers)
-	print("basetable new")
     local self = setmetatable({}, bt)
 
     self.__index = self
@@ -31,9 +30,7 @@ function bt:New(dataSource, headers)
 	self.scrollGroup:SetPoint("TOP")
 	self.scrollGroup:AddChild(self.scrollFrame)
 
-    self.tableHeader = bt:Header(headers)
-
-	print("header length: ", #self.tableHeader)
+    self.tableHeader = bt:Header(headers or {})
 
 	self.tableGroup = AceGUI:Create("SimpleGroup")
     self.tableGroup:SetFullWidth(true)
@@ -69,7 +66,6 @@ function bt:Header(headers)
 
     if headers then
         for _, header in ipairs(headers) do
-			print(header.name)
             tableHeader:AddChild(self:HeaderCell(header.name, header.width)) 
         end
     end
@@ -122,7 +118,8 @@ function bt:CoinCell(price)
 		GameTooltip:SetOwner(widget.frame, "ANCHOR_NONE")
 		GameTooltip:SetPoint("TOPLEFT", widget.frame, "BOTTOMLEFT")
 		GameTooltip:ClearLines()
-		GameTooltip:SetText(Loot.COIN_LINK.."\nAmount: "..GetCoinTextureString(price))
+		GameTooltip:SetText(Loot.COIN_LINK)
+		GameTooltip:AddLine(WHITE_FONT_COLOR_CODE.."Price: "..GetCoinTextureString(price))
 		GameTooltip:Show()
 	end)
 	cell:SetCallback("OnLeave", function()
@@ -176,8 +173,8 @@ function bt:Fill(start, finish)
 	if self.dataSource and self.scrollGroup then
 		self.scrollFrame:ReleaseChildren()
 		for e = start, finish, -1 do
-			if self.dataSource[e] then
-				local event = self.dataSource[e]
+			local event = self.dataSource[e]
+			if event then
 				local row = self:Row()
 				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))

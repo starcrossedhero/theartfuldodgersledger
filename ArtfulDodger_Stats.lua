@@ -45,7 +45,7 @@ function Stats:OnInitialize()
 end
 
 function Stats:OnEnable()
-    self:RegisterMessage(Events.Loot.PickPocket, "PickPocketComplete")
+    self:RegisterMessage(Events.Loot.PickPocketComplete, "PickPocketComplete")
     self:RegisterMessage(Events.Loot.Junkbox, "JunkboxLooted")
     self:RegisterMessage(Events.History.Reset, "Reset")
     self:RegisterMessage(Events.Session.Reset, "ResetSession")
