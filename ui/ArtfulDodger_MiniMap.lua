@@ -6,11 +6,12 @@ local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Stats = Addon:GetModule("ArtfulDodger_Stats")
 local Minimap = Addon:NewModule("ArtfulDodger_Minimap", "AceEvent-3.0")
 local Events = Addon.Events
+local L = Addon.Localizations
 
-Minimap.Title = "The Artful Dodger's Ledger"
+Minimap.Title = L["The Artful Dodger's Ledger"]
 Minimap.Gold = "|cffeec300"
 Minimap.White = "|cffFFFFFF"
-Minimap.StatusString = Minimap.Gold.."Victims:|r "..Minimap.White.."%d|r   "..Minimap.Gold.."Coin:|r "..Minimap.White.."%s|r  "..Minimap.Gold.."Per Hour:|r  "..Minimap.White.."%s|r"..Minimap.Gold.."  Per Victim:|r  "..Minimap.White.."%s|r"
+Minimap.StatusString = Minimap.Gold..L["Victims"]..":|r "..Minimap.White.."%d|r   "..Minimap.Gold..L["Coin"]..":|r "..Minimap.White.."%s|r  "..Minimap.Gold..L["Per Hour"]..":|r  "..Minimap.White.."%s|r"..Minimap.Gold.."  "..L["Per Victim"]..":|r  "..Minimap.White.."%s|r"
 Minimap.timeSinceLastUpdate = 0
 
 Minimap.Button = LibStub("LibDBIcon-1.0")
@@ -30,7 +31,6 @@ function Minimap:OnEnable()
     self.settings = Addon.db.settings.minimap
     self.Button:Register(Minimap.Title, Minimap.Datasource, self.settings)
     self:RegisterMessage(Events.Minimap.Toggle, "Toggle")
-    --self:RegisterMessage(Events.Session.Reset, "Reset")
 end
 
 function Minimap:Toggle(_, hide)
@@ -46,7 +46,6 @@ function Minimap:Toggle(_, hide)
 end
 
 function Minimap:Reset()
-    print(Stats.db.session.thefts, Stats.db.session.copper, Stats.db.session.start)
     self.Datasource.text = string.format(Minimap.StatusString, 
         Stats.db.session.thefts,
         GetCoinTextureString(Stats.db.session.copper),
@@ -82,7 +81,7 @@ function Minimap.Datasource:OnClick(type)
 end
 
 function Minimap.Datasource:OnTooltipShow()
-    self:AddLine("The Artful Dodger's Ledger")
+    self:AddLine(Minimap.Title)
     self:AddLine("")
     self:AddLine(Stats:GetPrettyPrintTotalLootedString())
 end

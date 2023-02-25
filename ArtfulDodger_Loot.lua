@@ -2,12 +2,15 @@ if select(3, UnitClass("player")) ~= 4 then
     return
 end
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
+local L = Addon.Localizations
 
 local Loot = {}
-addon.Loot = Loot
+Loot.__index = Loot
 
-Loot.COIN_NAME = "Coin"
+Addon.Loot = Loot
+
+Loot.COIN_NAME = L["Coin"]
 Loot.COIN_LINK = "|cFFCC9900"..Loot.COIN_NAME.."|r"
 Loot.COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
 
@@ -25,24 +28,25 @@ Loot.JUNKBOXES = {
 }
 
 function Loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
-	local this = {
-        sourceGuid = sourceGuid,
-        id = id,
-		name = name,
-		link = link,
-		icon = icon,
-		quantity = quantity,
-        price = price,
-        isItem = isItem
-	}
+    local self = {}
+    setmetatable(self, Loot)
+
     self.__index = self
-	setmetatable(this, self)
-	return this
+    self.sourceGuid = sourceGuid
+    self.id = id
+	self.name = name
+	self.link = link
+	self.icon = icon
+	self.quantity = quantity
+    self.price = price
+    self.isItem = isItem
+
+	return self
 end
 
 function Loot:ToString()
-    return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", 
-        self.sourceGuid or "", self.id or "", self.name or "", self.link or "", self.icon or "", self.quantity or "", self.price or "", self.isItem or "")
+    --return string.format("Loot: sourceGuid=%s, itemId=%s, name=%s, link=%s, icon=%s, quantity=%s, price=%s, isItem=%s", 
+        --self.sourceGuid or "", self.id or "", self.name or "", self.link or "", self.icon or "", self.quantity or "", self.price or "", self.isItem or "")
 end
 
 function Loot:NewItem(sourceGuid, itemId, name, link, icon, quantity, price)
@@ -53,7 +57,7 @@ function Loot:NewCoin(sourceGuid, price)
     return Loot:New(sourceGuid, nil, nil, nil, nil, 1, price, false)
 end
 
-function Loot:CacheJunkboxInfo()
+function Loot.CacheJunkboxInfo()
     for i = 1, #Loot.JUNKBOXES do
         if not Loot.JUNKBOXES[i].name then
             local item = Item:CreateFromItemID(Loot.JUNKBOXES[i].itemId)
@@ -111,4 +115,4 @@ function Loot.GetJunkboxFromItemId(id)
 	return nil
 end
 
-Loot:CacheJunkboxInfo()
+Loot.CacheJunkboxInfo()

@@ -6,6 +6,7 @@ local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Stats = Addon:GetModule("ArtfulDodger_Stats")
 local Events = Addon.Events
 local Tool = Addon:NewModule("ArtfulDodger_Tooltip", "AceEvent-3.0")
+local L = Addon.Localizations
 
 function Tool:OnInitialize()
     self.settings = Addon.db.settings.tooltip
@@ -24,7 +25,7 @@ function Tool.OnTooltipSetItem(tooltip, data)
             if guid and UnitCreatureType("mouseover") == "Humanoid" and not UnitIsPlayer("mouseover") and not UnitIsFriend("player", "mouseover") then
                 local npcId = select(6, strsplit("-", guid))
                 if npcId then 
-                    tooltip:AddLine("Typical Purse: "..GetCoinTextureString(Stats:GetAverageCoinByNpcId(npcId)))
+                    tooltip:AddLine(L["Typical Purse"]..": "..GetCoinTextureString(Stats:GetAverageCoinByNpcId(npcId)))
                 end
             end
         end

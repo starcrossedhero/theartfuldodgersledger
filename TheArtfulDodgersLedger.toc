@@ -9,7 +9,8 @@
 
 embeds.xml
 ArtfulDodger_Core.lua
-ArtfulDodger_Localization.lua
+localization\Localizations.lua
+localization\esMX.lua
 events\ArtfulDodger_Events.lua
 events\ArtfulDodger_JunkboxEvent.lua
 events\ArtfulDodger_PickPocketEvent.lua

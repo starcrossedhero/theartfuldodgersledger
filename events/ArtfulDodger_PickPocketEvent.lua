@@ -5,23 +5,22 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 
 local PickPocketEvent = {}
-Addon.PickPocketEvent = PickPocketEvent 
+PickPocketEvent.__index = PickPocketEvent
+
+Addon.PickPocketEvent = PickPocketEvent
 
 function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
-	local this = {
-		timestamp = eventTime or 0,
-		victim = eventVictim or {},
-		mapId = eventMapId or "",
-        areaName = eventAreaName or "",
-		loot = eventLoot or {}
-	}
-	self.__index = self
-	setmetatable(this, self)
-	return this
-end
+	local self = {}
+	setmetatable(self, PickPocketEvent)
 
-function PickPocketEvent:CreateRow()
-	return {timestamp=self.timestamp, victim=self.victim, mapId=self.mapId, areaName=self.areaName, loot=self.loot}
+	self.__index = self
+	self.timestamp = eventTime or 0
+	self.victim = eventVictim or {}
+	self.mapId = eventMapId or ""
+    self.areaName = eventAreaName or ""
+	self.loot = eventLoot or {}
+
+	return self
 end
 
 function PickPocketEvent:ToString()
@@ -38,4 +37,3 @@ function PickPocketEvent:GetCopperFromLoot()
     end
 	return copper
 end
-

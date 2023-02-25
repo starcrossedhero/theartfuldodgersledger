@@ -7,14 +7,17 @@ local AceGUI = LibStub("AceGUI-3.0")
 local Loot = Addon.Loot
 
 local bt = {}
+bt.__index = bt
+
 Addon.BaseTable = bt
 
 bt.DATE_FORMAT = "%Y/%m/%d %H:%M:%S"
 bt.HEADERS = {}
 
 function bt:New(dataSource)
-    local o = {}
-    setmetatable(o, self)
+    local self = {}
+    setmetatable(self, bt)
+
     self.__index = self
 
 	self.scrollFrame = AceGUI:Create("ScrollFrame")
@@ -42,7 +45,7 @@ function bt:New(dataSource)
 	self.currentIndex = #self.dataSource
 	self.previousIndex = #self.dataSource
 
-	return o
+	return self
 end
 
 function bt:GetFrame()

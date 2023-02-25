@@ -5,33 +5,34 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local AceGUI = LibStub("AceGUI-3.0")
 local Loot = Addon.Loot
+local L = Addon.Localizations
 
 local ppt = Addon.BaseTable:New()
 Addon.PickPocketTable = ppt
 
 ppt.HEADERS = {
 	{
-		name = "Time",
+		name = L["Time"],
 		width = 90
 	},
 	{
-		name = "Map",
+		name = L["Map"],
 		width = 90
 	},
 	{
-		name = "Area",
+		name = L["Area"],
 		width = 90
 	},
 	{
-		name = "Victim",
+		name = L["Victim"],
 		width = 90
 	},
 	{
-		name = "Price",
+		name = L["Price"],
 		width = 90
 	},
 	{
-		name = "Items",
+		name = L["Items"],
 		width = 90
 	}
 }
@@ -43,6 +44,7 @@ function ppt:Fill(start, finish)
 			if self.dataSource[e] then
 				local event = self.dataSource[e]
 				local row = self:Row()
+				print("row: ", event.timestamp, event.victim.name, event.loot)
 				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))
 				row:AddChild(self:Cell(event.areaName))

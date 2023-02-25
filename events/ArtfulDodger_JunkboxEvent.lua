@@ -5,22 +5,21 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 
 local JunkboxEvent = {}
+JunkboxEvent.__index = JunkboxEvent
+
 Addon.JunkboxEvent = JunkboxEvent
 
 function JunkboxEvent:New(eventTime, eventItemId, eventGuid, eventLoot)
-	local this = {
-		timestamp = eventTime or 0,
-		itemId = eventItemId or "",
-		guid = eventGuid or "",
-		loot = eventLoot or {}
-	}
-	self.__index = self
-	setmetatable(this, self)
-	return this
-end
+	local self = {}
+	setmetatable(self, JunkboxEvent)
 
-function JunkboxEvent:CreateRow()
-	return {timestamp=self.timestamp, itemId=self.itemId, guid=self.guid, loot=#self.loot}
+	self.__index = self
+	self.timestamp = eventTime or 0
+	self.itemId = eventItemId or ""
+	self.guid = eventGuid or ""
+	self.loot = eventLoot or {}
+	
+	return self
 end
 
 function JunkboxEvent:ToString()

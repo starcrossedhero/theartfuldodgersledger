@@ -6,6 +6,7 @@ local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Stats = Addon:GetModule("ArtfulDodger_Stats")
 local Map = Addon:NewModule("ArtfulDodger_Map", "AceEvent-3.0")
 local Events = Addon.Events
+local L = Addon.Localizations
 
 Map.timeSinceLastUpdate = 0
 Map.currentMapId = -1
@@ -61,7 +62,7 @@ function Map:UpdateFrameText(mapId)
 end
 
 function Map:GeneratePrettyString(name, victims, copper)
-    return string.format("%s\nVictims: %d   Coin: %s", name, victims, GetCoinTextureString(copper))
+    return string.format("%s\n"..L["Victims"]..": %d   "..L["Coin"]..": %s", name, victims, GetCoinTextureString(copper))
 end
 
 function Map:IsValidCoords(x, y)

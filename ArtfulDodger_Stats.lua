@@ -5,6 +5,7 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Stats = Addon:NewModule("ArtfulDodger_Stats", "AceEvent-3.0")
 local Events = Addon.Events
+local L = Addon.Localizations
 
 local defaults = {
 	char = {
@@ -218,13 +219,40 @@ function Stats:GetTotalCopperPerVictim()
 end
 
 function Stats:GetPrettyPrintTotalLootedString()
-	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.history.start), "historic", "stash", GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
+	return self:PrettyPrint(date("%Y/%m/%d %H:%M:%S", self.db.history.start), GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
 end
 
 function Stats:GetPrettyPrintSessionLootedString()
-	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.session.start), "current", "purse", GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
+	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.session.start), L["recent"], L["purse"], GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
 end
 
 function Stats:GetPrettyPrintString(date, period, store, copper, count, average)
 	return string.format("\nSince |cffFFFFFF%s|r\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
 end
+
+function Stats:PrettyPrint(date, copper, count, average)
+    local date = string.format(L["Since"]..self:SubColors(" ^WHITE%s|r"), date)
+    local count = string.format(self:SubColors(L["You've ^REDpicked pockets|r of ^WHITE%d|r victim(s)"]), count)
+    local total = string.format(self:SubColors(L["You've ^REDpilfered|r a total of ^WHITE%s|r in ill-gotten ^GREENgains|r"]), copper)
+    local average = string.format(self:SubColors(L["You've ^REDstolen|r an average of ^WHITE%s|r per victim"]), average)
+    return string.format("\n%s\n\n%s\n%s\n%s", date, count, total, average)
+end
+
+function Stats:SubColors(string)
+    return string:gsub("%^RED", RED_FONT_COLOR_CODE):gsub("%^GREEN", GREEN_FONT_COLOR_CODE):gsub("%^BLUE", BLUE_FONT_COLOR_CODE):gsub("%^WHITE", WHITE_FONT_COLOR_CODE):gsub("%^GOLD", GOLD_FONT_COLOR_CODE)
+end
+
+--string:gsub("^R", RED_FONT_COLOR)
+--string:gsub("^G", GREEN_FONT_COLOR)
+--string:gsub("^B", BLUE_FONT_COLOR)
+--string:gsub("^W", WHITE_FONT_COLOR)
+--string:gsub("^E", "|r")
+
+--Since ^W%d|r your ^Rhistoric|r pilfering has ^Gincreased|r your stash by ^W%d|r
+--Desde ^W%d|r tu robo ^Rhistorico|r ha ^Gaumentado|r tu riqueza en ^W%d|r
+
+--You've ^Rpicked pockets|r of ^W%d|r victim(s)
+--Has ^Rrobado los bolsillos|r de ^W%d|r víctima(s)
+
+--You've ^Rstolen|r an average of ^W%s|r from each victim"
+--Le has ^Rrobado|r un promedio de ^W%d|r a cada víctima"

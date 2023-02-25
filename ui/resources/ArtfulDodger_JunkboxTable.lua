@@ -5,25 +5,26 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local AceGUI = LibStub("AceGUI-3.0")
 local Loot = Addon.Loot
+local L = Addon.Localizations
 
 local jbt = Addon.BaseTable:New()
 Addon.JunkboxTable = jbt
 
 jbt.HEADERS = {
 	{
-		name = "Time",
+		name = L["Time"],
 		width = 90
 	},
 	{
-		name = "Junkbox",
+		name = L["Junkbox"],
 		width = 250
 	},
 	{
-		name = "Price",
+		name = L["Price"],
 		width = 90
 	},
 	{
-		name = "Items",
+		name = L["Items"],
 		width = 90
 	}
 }

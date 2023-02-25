@@ -5,6 +5,7 @@ end
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local UI = Addon:NewModule("ArtfulDodger_UI", "AceEvent-3.0")
 local Stats = Addon:GetModule("ArtfulDodger_Stats")
+local L = Addon.Localizations
 local Loot = Addon.Loot
 local PickPocketTable = Addon.PickPocketTable
 local JunkboxTable = Addon.JunkboxTable
@@ -41,58 +42,58 @@ function UI:CreateSettingsDisplay()
 
 	local minimapCheckbox = AceGUI:Create("CheckBox")
     minimapCheckbox:SetType("checkbox")
-    minimapCheckbox:SetLabel("Minimap Button")
-    minimapCheckbox:SetDescription("Add a button to the minimap to access the UI")
+    minimapCheckbox:SetLabel(L["Minimap Button"])
+    minimapCheckbox:SetDescription(L["Add a button to the minimap to access the UI"])
 	minimapCheckbox:SetValue(not Addon.db.settings.minimap.hide)
     minimapCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Minimap.Toggle, not value) end)
 	checkboxContainer:AddChild(minimapCheckbox)
     
     local mapCheckbox = AceGUI:Create("CheckBox")
     mapCheckbox:SetType("checkbox")
-    mapCheckbox:SetLabel("World Map Display")
-    mapCheckbox:SetDescription("Shows map loot stats on world map")
+    mapCheckbox:SetLabel(L["World Map Display"])
+    mapCheckbox:SetDescription(L["Shows map loot stats on world map"])
 	mapCheckbox:SetValue(Addon.db.settings.map.enabled)
     mapCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Map.Toggle, value) end)
 	checkboxContainer:AddChild(mapCheckbox)
 
 	local unitFrameCheckbox = AceGUI:Create("CheckBox")
     unitFrameCheckbox:SetType("checkbox")
-    unitFrameCheckbox:SetLabel("Unit Frame Display")
-    unitFrameCheckbox:SetDescription("Shows icon on UnitFrames to indicate a unit can likely be pick pocketed")
+    unitFrameCheckbox:SetLabel(L["Unit Frame Display"])
+    unitFrameCheckbox:SetDescription(L["Shows icon on UnitFrames to indicate a unit can likely be pick pocketed"])
 	unitFrameCheckbox:SetValue(Addon.db.settings.unitFrame.enabled)
     unitFrameCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.UnitFrame.Toggle, value) end)
 	checkboxContainer:AddChild(unitFrameCheckbox)
 
 	local tooltipCheckbox = AceGUI:Create("CheckBox")
     tooltipCheckbox:SetType("checkbox")
-    tooltipCheckbox:SetLabel("Tooltip Display")
-    tooltipCheckbox:SetDescription("Shows average purse size from victim in tooltip")
+    tooltipCheckbox:SetLabel(L["Tooltip Display"])
+    tooltipCheckbox:SetDescription(L["Shows average purse size from victim in tooltip"])
 	tooltipCheckbox:SetValue(Addon.db.settings.tooltip.enabled)
     tooltipCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Tooltip.Toggle, value) end)
 	checkboxContainer:AddChild(tooltipCheckbox)
 
 	local openerCheckbox = AceGUI:Create("CheckBox")
     openerCheckbox:SetType("checkbox")
-    openerCheckbox:SetLabel("Junkbox Opener")
-    openerCheckbox:SetDescription("Creates a button to easily unlock and open junkboxes")
+    openerCheckbox:SetLabel(L["Junkbox Opener"])
+    openerCheckbox:SetDescription(L["Creates a button to easily unlock and open junkboxes"])
 	openerCheckbox:SetValue(Addon.db.settings.opener.enabled)
     openerCheckbox:SetCallback("OnValueChanged", function(_, event, value) UI:SendMessage(Events.Opener.Toggle, value) end)
 	checkboxContainer:AddChild(openerCheckbox)
 
 	local resetSessionButton = AceGUI:Create("Button")
-	resetSessionButton:SetText("Reset Current Session")
+	resetSessionButton:SetText(L["Reset Session"])
 	resetSessionButton:SetWidth(200)
 	resetSessionButton:SetCallback("OnClick", function() UI:SendMessage(Events.Session.Reset) end)
 	buttonContainer:AddChild(resetSessionButton)
 
 	local resetHistoryButton = AceGUI:Create("Button")
-	resetHistoryButton:SetText("Reset History")
+	resetHistoryButton:SetText(L["Reset History"])
 	resetHistoryButton:SetWidth(200)
 	resetHistoryButton:SetCallback("OnClick", function() UI:SendMessage(Events.History.Reset) end)
 	buttonContainer:AddChild(resetHistoryButton)
 
 	local resetExclusionsButton = AceGUI:Create("Button")
-	resetExclusionsButton:SetText("Reset Exclusions")
+	resetExclusionsButton:SetText(L["Reset Exclusions"])
 	resetExclusionsButton:SetWidth(200)
 	resetExclusionsButton:SetCallback("OnClick", function() UI:SendMessage(Events.UnitFrame.Reset) end)
 	
@@ -115,19 +116,19 @@ function UI:CreateFilterSettings(historyTable)
 	local mapsDropdown = AceGUI:Create("Dropdown")
 	local victimsDropdown = AceGUI:Create("Dropdown")
 
-    mapsDropdown:SetLabel("Maps")
+    mapsDropdown:SetLabel(L["Maps"])
 	mapsDropdown:SetHeight(50)
     mapsDropdown:SetRelativeWidth(0.3)
 	mapsDropdown:SetList(maps)
-	mapsDropdown:AddItem("All", "All Maps")
-	mapsDropdown:SetValue("All")
+	mapsDropdown:AddItem(L["All"], L["All Maps"])
+	mapsDropdown:SetValue(L["All"])
     mapsDropdown:SetCallback("OnValueChanged", function(key)
 		local mapId = key.value
 
-		if mapId == "All" then
+		if mapId == L["All"] then
 			historyTable:DataSource(Addon.db.history.pickpocket)
 			historyTable:Next()
-			victimsDropdown:SetValue("All")
+			victimsDropdown:SetValue(L["All"])
 			victimsDropdown:SetDisabled(true)
 		else
 			mapHistory = Addon:GetHistoryByMapId(mapId)
@@ -135,22 +136,22 @@ function UI:CreateFilterSettings(historyTable)
 			historyTable:Next()
 			victimsDropdown:SetDisabled(false)
 			victimsDropdown:SetList(Stats:GetVictims(mapId))
-			victimsDropdown:AddItem("All", "All Victims")
-			victimsDropdown:SetValue("All")
+			victimsDropdown:AddItem(L["All"], L["All Victims"])
+			victimsDropdown:SetValue(L["All"])
 		end
 		UI:UpdatePickPocketStats(mapId)
     end)
 
 	victimsDropdown:SetDisabled(true)
-	victimsDropdown:SetLabel("Victims")
+	victimsDropdown:SetLabel(L["Victims"])
 	victimsDropdown:SetHeight(50)
 	victimsDropdown:SetRelativeWidth(0.3)
-	victimsDropdown:AddItem("All", "All Victims")
-	victimsDropdown:SetValue("All")
+	victimsDropdown:AddItem(L["All"], L["All Victims"])
+	victimsDropdown:SetValue(L["All"])
 	victimsDropdown:SetCallback("OnValueChanged", function(key)
 		local npcId = key.value
 
-		if npcId == "All" then
+		if npcId == L["All"] then
 			historyTable:DataSource(mapHistory)
 			historyTable:Next()
 		else
@@ -174,16 +175,16 @@ function UI:CreateJunkboxFilter(historyTable)
 
 	local junkboxDropdown = AceGUI:Create("Dropdown")
 
-    junkboxDropdown:SetLabel("Maps")
+    junkboxDropdown:SetLabel(L["Junkboxes"])
 	junkboxDropdown:SetHeight(50)
     junkboxDropdown:SetRelativeWidth(0.3)
 	junkboxDropdown:SetList(Loot.GetJunkboxList())
-	junkboxDropdown:AddItem("All", "All Junkboxes")
-	junkboxDropdown:SetValue("All")
+	junkboxDropdown:AddItem(L["All"], L["All Junkboxes"])
+	junkboxDropdown:SetValue(L["All"])
     junkboxDropdown:SetCallback("OnValueChanged", function(key)
 		local junkboxId = key.value
 
-		if junkboxId == "All" then
+		if junkboxId == L["All"] then
 			historyTable:DataSource(Addon.db.history.junkboxes)
 			historyTable:Next()
 		else
@@ -237,7 +238,7 @@ end
 
 function UI:UpdateJunkboxStats(junkboxId)
 	local junkboxStats
-	if junkboxId == "All" then
+	if junkboxId == L["All"] then
 		junkboxStats = Stats:GetStatsForJunkboxes()
 	else
 		junkboxStats = Stats:GetStatsByJunkboxId(junkboxId)
@@ -251,13 +252,13 @@ end
 function UI:UpdatePickPocketStats(mapId, npcId)
 	local pickPocketStats
 	if npcId then
-		if npcId == "All" then
+		if npcId == L["All"] then
 			pickPocketStats = Stats:GetStatsForMapId(mapId)
 		else
 			pickPocketStats = Stats:GetStatsByMapIdAndNpcId(mapId, npcId)
 		end
 	else
-		if mapId == "All" then
+		if mapId == L["All"] then
 			pickPocketStats = {thefts = Stats.db.history.thefts, copper = Stats.db.history.copper}
 		else
 			pickPocketStats = Stats:GetStatsForMapId(mapId)
@@ -269,33 +270,33 @@ function UI:UpdatePickPocketStats(mapId, npcId)
 end
 
 function UI:JunkboxesOpenedString(count)
-	return string.format("|cffeec300 Junkboxes Opened: |cffFFFFFF%d  |r", count)
+	return string.format("|cffeec300 "..L["Junkboxes Opened"]..": |cffFFFFFF%d  |r", count)
 end
 
 function UI:JunkboxesTotalString(copper)
-	return string.format("|cffeec300 Junkbox coin: |cffFFFFFF%s|r", GetCoinTextureString(copper))
+	return string.format("|cffeec300 "..L["Junkbox Coin"]..": |cffFFFFFF%s|r", GetCoinTextureString(copper))
 end
 
 function UI:JunkboxesAverageString(copper, count)
-	return string.format("|cffeec300 Typical value: |cffFFFFFF%s  |r", GetCoinTextureString(Addon:GetCopperPerVictim(copper, count)))
+	return string.format("|cffeec300 "..L["Typical Value"]..": |cffFFFFFF%s  |r", GetCoinTextureString(Addon:GetCopperPerVictim(copper, count)))
 end
 
 function UI:PickPocketVictimString(victims)
-    return string.format("|cffeec300 Picked pockets: |cffFFFFFF%d|r", victims)
+    return string.format("|cffeec300 "..L["Picked Pockets"]..": |cffFFFFFF%d|r", victims)
 end
 
 function UI:PickPocketTotalString(copper)
-    return string.format("|cffeec300 Pilfered coin: |cffFFFFFF%s|r", GetCoinTextureString(copper))
+    return string.format("|cffeec300 "..L["Pilfered Coin"]..": |cffFFFFFF%s|r", GetCoinTextureString(copper))
 end
 
 function UI:PickPocketAverageString(copper, thefts)
-    return string.format("|cffeec300 Typical purse: |cffFFFFFF%s|r", GetCoinTextureString(Addon:GetCopperPerVictim(copper, thefts)))
+    return string.format("|cffeec300 "..L["Typical Purse"]..": |cffFFFFFF%s|r", GetCoinTextureString(Addon:GetCopperPerVictim(copper, thefts)))
 end
 
 function UI:CreateBaseUI()
 	local tab =  AceGUI:Create("TabGroup")
 	tab:SetLayout("Flow")
-	tab:SetTabs({{text="Picked Pockets", value="tab1"}, {text="Junkboxes", value="tab2"}, {text="Settings", value="tab3"}})
+	tab:SetTabs({{text=L["Picked Pockets"], value="tab1"}, {text=L["Junkboxes"], value="tab2"}, {text=L["Settings"], value="tab3"}})
 	tab:SetCallback("OnGroupSelected", function(container, event, group)
 		container:ReleaseChildren()
 		if 	   group == "tab1" then
@@ -305,7 +306,7 @@ function UI:CreateBaseUI()
 			container:AddChild(UI:CreateStatsDisplay())
 			container:AddChild(UI:TableButtons(historyTable))
 			historyTable:Next()
-			UI:UpdatePickPocketStats("All")
+			UI:UpdatePickPocketStats(L["All"])
 		elseif group == "tab2" then
 			local junkboxTable = JunkboxTable:New(Addon.db.history.junkboxes)
 			container:AddChild(UI:CreateJunkboxFilter(junkboxTable))
@@ -313,7 +314,7 @@ function UI:CreateBaseUI()
 			container:AddChild(UI:CreateStatsDisplay())
 			container:AddChild(UI:TableButtons(junkboxTable))
 			junkboxTable:Next()
-			UI:UpdateJunkboxStats("All")
+			UI:UpdateJunkboxStats(L["All"])
 		elseif group == "tab3" then
 			container:AddChild(UI:CreateSettingsDisplay())
 		end
@@ -322,7 +323,7 @@ function UI:CreateBaseUI()
 	tab:SelectTab("tab1")
 
 	local frame = AceGUI:Create("Window")
-	frame:SetTitle("The Artful Dodger's Ledger")
+	frame:SetTitle(L["The Artful Dodger's Ledger"])
 	frame:SetLayout("Fill")
 	frame:SetPoint("CENTER")
 	frame:SetHeight(650)
@@ -345,13 +346,13 @@ function UI:TableButtons(sourceTable)
 
 	local nextButton = AceGUI:Create("Button")
 	nextButton:SetHeight(30)
-	nextButton:SetText("Next Page")
+	nextButton:SetText(L["Next Page"])
 	nextButton:SetRelativeWidth(0.5)
 	nextButton:SetCallback("OnClick", function() sourceTable:Next() end)
 
 	local previousButton = AceGUI:Create("Button")
 	previousButton:SetHeight(30)
-	previousButton:SetText("Previous Page")
+	previousButton:SetText(L["Previous Page"])
 	previousButton:SetRelativeWidth(0.5)
 	previousButton:SetCallback("OnClick", function() sourceTable:Previous() end)
 
