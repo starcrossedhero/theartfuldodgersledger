@@ -177,11 +177,7 @@ end
 
 function Addon:SavePickPocketEvent(event)
     if self.db.settings.history.eventLimit >= #self.db.history.pickpocket then
-        print("saving event: ", event, event.timestamp, event.victim.name, #event.loot)
         table.insert(self.db.history.pickpocket, event)
-        for i = 1, #self.db.history.pickpocket do
-            print("event: ", event.timestamp, event.victim.guid, event.victim.name, #event.loot)
-        end
     end
 end
 
@@ -195,7 +191,6 @@ end
 function Addon:SaveLootToPickPocketEvent(event, loot)
     if #event.loot < 1 then
         event.loot = loot
-        print(event.loot[1]:ToString())
         Addon:SendMessage(self.Events.Loot.PickPocket, event)
     end
 end

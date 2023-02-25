@@ -183,9 +183,6 @@ end
 function Stats:GetStatsByJunkboxId(junkboxId)
     local stats = {copper = 0, thefts = 0}
     local junkbox = self.db.junkboxes[junkboxId]
-    for i, v in pairs(self.db.junkboxes) do
-        print(i, v)
-    end
     if junkbox then
         stats.copper = stats.copper + junkbox.copper
         stats.thefts = stats.thefts + junkbox.thefts

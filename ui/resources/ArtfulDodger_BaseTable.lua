@@ -12,11 +12,10 @@ bt.__index = bt
 Addon.BaseTable = bt
 
 bt.DATE_FORMAT = "%Y/%m/%d %H:%M:%S"
-bt.HEADERS = {}
 
-function bt:New(dataSource)
-    local self = {}
-    setmetatable(self, bt)
+function bt:New(dataSource, headers)
+	print("basetable new")
+    local self = setmetatable({}, bt)
 
     self.__index = self
 
@@ -32,12 +31,16 @@ function bt:New(dataSource)
 	self.scrollGroup:SetPoint("TOP")
 	self.scrollGroup:AddChild(self.scrollFrame)
 
-    self.tableHeader = self:Header()
+    self.tableHeader = bt:Header(headers)
+
+	print("header length: ", #self.tableHeader)
 
 	self.tableGroup = AceGUI:Create("SimpleGroup")
     self.tableGroup:SetFullWidth(true)
     self.tableGroup:AddChild(self.tableHeader)
     self.tableGroup:AddChild(self.scrollGroup)
+
+	self.tableGroup:DoLayout()
 	
 	self.dataSource = dataSource or {}
 	
@@ -58,13 +61,15 @@ function bt:DataSource(dataSource)
 	self.previousIndex = #self.dataSource
 end
 
-function bt:Header()
+function bt:Header(headers)
 	local tableHeader = AceGUI:Create("SimpleGroup")
 	tableHeader:SetFullWidth(true)
 	tableHeader:SetLayout("Flow")
+	tableHeader:SetHeight(25)
 
-    if self.HEADERS then
-        for _, header in ipairs(self.HEADERS) do
+    if headers then
+        for _, header in ipairs(headers) do
+			print(header.name)
             tableHeader:AddChild(self:HeaderCell(header.name, header.width)) 
         end
     end

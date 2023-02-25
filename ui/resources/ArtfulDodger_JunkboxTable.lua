@@ -7,10 +7,15 @@ local AceGUI = LibStub("AceGUI-3.0")
 local Loot = Addon.Loot
 local L = Addon.Localizations
 
-local jbt = Addon.BaseTable:New()
-Addon.JunkboxTable = jbt
+local BaseTable = Addon.BaseTable
 
-jbt.HEADERS = {
+local JunkboxTable = {}
+JunkboxTable.__index = JunkboxTable
+setmetatable(JunkboxTable, BaseTable)
+
+Addon.JunkboxTable = JunkboxTable
+
+JunkboxTable.HEADERS = {
 	{
 		name = L["Time"],
 		width = 90
@@ -29,7 +34,11 @@ jbt.HEADERS = {
 	}
 }
 
-function jbt:JunkboxCell(link, image, label)
+function JunkboxTable:New(datasource)
+	return setmetatable(BaseTable:New(datasource, HEADERS), self)
+end
+
+function JunkboxTable:JunkboxCell(link, image, label)
     local cell = AceGUI:Create("InteractiveLabel")
     cell:SetImage(image)
     cell:SetImageSize(20,20)
@@ -49,7 +58,7 @@ function jbt:JunkboxCell(link, image, label)
     return cell
 end
 
-function jbt:Fill(start, finish)
+function JunkboxTable:Fill(start, finish)
 	if self.dataSource and self.scrollGroup then
 		self.scrollFrame:ReleaseChildren()
 		for e = start, finish, -1 do

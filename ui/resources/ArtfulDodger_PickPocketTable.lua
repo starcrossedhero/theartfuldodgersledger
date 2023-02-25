@@ -7,10 +7,15 @@ local AceGUI = LibStub("AceGUI-3.0")
 local Loot = Addon.Loot
 local L = Addon.Localizations
 
-local ppt = Addon.BaseTable:New()
-Addon.PickPocketTable = ppt
+local BaseTable = Addon.BaseTable
 
-ppt.HEADERS = {
+local PickPocketTable = {}
+PickPocketTable.__index = PickPocketTable
+setmetatable(PickPocketTable, BaseTable)
+
+Addon.PickPocketTable = PickPocketTable
+
+local HEADERS = {
 	{
 		name = L["Time"],
 		width = 90
@@ -37,14 +42,17 @@ ppt.HEADERS = {
 	}
 }
 
-function ppt:Fill(start, finish)
+function PickPocketTable:New(datasource)
+	return setmetatable(BaseTable:New(datasource, HEADERS), self)
+end
+
+function PickPocketTable:Fill(start, finish)
 	if self.dataSource and self.scrollGroup then
 		self.scrollFrame:ReleaseChildren()
 		for e = start, finish, -1 do
 			if self.dataSource[e] then
 				local event = self.dataSource[e]
 				local row = self:Row()
-				print("row: ", event.timestamp, event.victim.name, event.loot)
 				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
 				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))
 				row:AddChild(self:Cell(event.areaName))

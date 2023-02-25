@@ -192,7 +192,6 @@ function UI:CreateJunkboxFilter(historyTable)
 			historyTable:DataSource(junkboxHistory)
 			historyTable:Next()
 		end
-		print(junkboxId)
 		UI:UpdateJunkboxStats(junkboxId)
     end)
 
