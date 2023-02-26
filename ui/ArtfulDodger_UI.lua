@@ -95,7 +95,7 @@ function UI:CreateSettingsDisplay()
 	local resetExclusionsButton = AceGUI:Create("Button")
 	resetExclusionsButton:SetText(L["Reset Exclusions"])
 	resetExclusionsButton:SetWidth(200)
-	resetExclusionsButton:SetCallback("OnClick", function() UI:SendMessage(Events.UnitFrame.Reset) end)
+	resetExclusionsButton:SetCallback("OnClick", function() UI:SendMessage(Events.Exclusions.Reset) end)
 	
 	buttonContainer:AddChild(resetExclusionsButton)
 

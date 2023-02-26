@@ -19,6 +19,7 @@ ArtfulDodger_Stats.lua
 ArtfulDodger_ChatCommands.lua
 opener\ArtfulDodger_OpenerFrame.lua
 opener\ArtfulDodger_JunkboxOpener.lua
+ui\resources\ArtfulDodger_Utils.lua
 ui\resources\ArtfulDodger_BaseTable.lua
 ui\resources\ArtfulDodger_PickPocketTable.lua
 ui\resources\ArtfulDodger_JunkboxTable.lua

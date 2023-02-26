@@ -6,6 +6,7 @@ local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Events = {
     History = {},
     Session = {},
+    Exclusions = {},
     Loot    = {},
     Map     = {},
     Minimap = {},
@@ -18,6 +19,7 @@ Addon.Events = Events
 
 Events.History.Reset    = "ARTFULDODGER_RESET_HISTORY"
 Events.Session.Reset    = "ARTFULDODGER_RESET_SESSION"
+Events.Exclusions.Reset  = "ARTFULDODGER_RESET_EXCLUSIONS"
 
 Events.Loot.PickPocketAttempt  = "ARTFULDODGER_LOOT_PICKPOCKET_ATTEMPT"
 Events.Loot.PickPocketComplete  = "ARTFULDODGER_LOOT_PICKPOCKET_COMPLETE"
@@ -29,7 +31,6 @@ Events.Tooltip.Toggle   = "ARTFULDODGER_TOOLTIP_TOGGLE"
 Events.UI.Toggle        = "ARTFULDODGER_UI_TOGGLE"
 
 Events.UnitFrame.Toggle = "ARTFULDODGER_UNITFRAME_TOGGLE"
-Events.UnitFrame.Reset  = "ARTFULDODGER_UNITFRAME_RESET"
 
 Events.Opener.Toggle    = "ARTFULDODGER_OPENER_TOGGLE"
 Events.Opener.BoxUpdate = "ARTFULDODGER_OPENER_BOXUPDATE"

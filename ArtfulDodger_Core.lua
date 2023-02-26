@@ -7,6 +7,7 @@ local Addon = LibStub("AceAddon-3.0"):NewAddon("ArtfulDodger", "AceEvent-3.0")
 local defaults = {
 	char = {
 		settings = {
+            lootRespawnSeconds = 480,
 			minimap = {
 				hide = false,
 				minimapPos = 136.23,
@@ -21,7 +22,6 @@ local defaults = {
             },
             unitFrame = {
                 enabled = true,
-                lootRespawnSeconds = 480,
                 updateFrequencySeconds = 5
             },
             tooltip = {
@@ -38,12 +38,20 @@ local defaults = {
 		history = {
             pickpocket = {},
             junkboxes = {}
-        }
+        },
+        exclusions = {}
 	}
 }
 
+-- for tracking attempts, even ones that failed
+Addon.RecentPickpockets = {}
+
 Addon.DefaultHistory = function()
     return Addon.ShallowCopy(defaults.char.history)
+end
+
+Addon.DefaultExclusions = function()
+    return Addon.ShallowCopy(defaults.char.exclusions)
 end
 
 function Addon.ShallowCopy(orig)
@@ -70,18 +78,34 @@ function Addon:OnEnable()
 	self:RegisterEvent("UI_ERROR_MESSAGE")
     self:RegisterEvent("LOOT_READY")
     self:RegisterMessage(self.Events.History.Reset, "Reset")
+    self:RegisterMessage(self.Events.Exclusions.Reset, "ResetExclusions")
 end
 
 function Addon:Reset()
 	self.db.history = self.DefaultHistory()
 end
 
+function Addon:ResetExclusions()
+    self.db.exclusions = self.DefaultExclusions()
+end
+
 function Addon:UI_ERROR_MESSAGE(event, errorType, message)
-	if (
-		message == ERR_ALREADY_PICKPOCKETED or 
-		message == SPELL_FAILED_TARGET_NO_POCKETS or 
-		message == SPELL_FAILED_ONLY_STEALTHED or 
-		message == SPELL_FAILED_ONLY_SHAPESHIFT) then
+	if (message == ERR_ALREADY_PICKPOCKETED) then
+        local guid = UnitGUID("target")
+        if guid then
+            if not Addon.RecentPickpockets[guid] then
+                Addon.RecentPickpockets[guid] = {timestamp = time()}
+            end
+        end
+        table.remove(self.db.history.pickpocket)
+    elseif message == SPELL_FAILED_TARGET_NO_POCKETS then
+        local guid = UnitGUID("target")
+        if guid then
+            local npcId = select(6, strsplit("-", guid))
+            if npcId then
+                table.insert(self.db.exclusions, npcId)
+            end
+        end
         table.remove(self.db.history.pickpocket)
     end
 end
@@ -159,10 +183,36 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(event)
                     mapId,
                     areaName
                 )
+                Addon:SendMessage(self.Events.Loot.PickPocketAttempt, event)
                 Addon:SavePickPocketEvent(event)
             end
 		end
     end
+end
+
+function Addon:EligibleForPickpocket(guid)
+    local event = self:GetLatestPickPocketByGuid(guid) or self.RecentPickpockets[guid]
+    if event then
+        if self:HasLootRespawned(event) then
+            self.RecentPickpockets[guid] = nil
+            return true
+        end
+        return false
+    end
+    return true
+end
+
+function Addon:HasLootRespawned(event)
+    return (time() - event.timestamp) > self.db.settings.lootRespawnSeconds
+end
+
+function Addon:HasPockets(npcId)
+    for i = 1, #self.db.exclusions do
+        if self.db.exclusions[i] == npcId then
+            return false
+        end
+    end
+    return true
 end
 
 function Addon:GetLatestPickPocketByGuid(guid)
@@ -176,8 +226,8 @@ function Addon:GetLatestPickPocketByGuid(guid)
 end
 
 function Addon:SavePickPocketEvent(event)
+    Addon.RecentPickpockets[event.victim.guid] = {timestamp = time()}
     if event and self.db.settings.history.eventLimit >= #self.db.history.pickpocket then
-        Addon:SendMessage(self.Events.Loot.PickPocketAttempt, event)
         table.insert(self.db.history.pickpocket, event)
     end
 end
