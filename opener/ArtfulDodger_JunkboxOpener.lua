@@ -75,7 +75,6 @@ function Opener:LOOT_READY(event, slotNumber)
         for source = 1, #sources, 2 do
             local sourceGuid = sources[source]
             if self.Junkboxes[sourceGuid] then
-                print("clearing box and frame")
                 self.Junkboxes[sourceGuid] = nil
                 Frame:Clear()
                 self:NextBox()
@@ -157,11 +156,9 @@ end
 
 function Opener:NextBox()
     if Frame.ArtfulDodger.Junkbox then
-        print("next box: found frame")
         local guid = Frame.ArtfulDodger.Junkbox.guid
         self:UpdateButton(self.Junkboxes[guid])
     else
-        print("next box: next")
         local _, junkbox = next(self.Junkboxes)
         self:UpdateButton(junkbox)
     end
