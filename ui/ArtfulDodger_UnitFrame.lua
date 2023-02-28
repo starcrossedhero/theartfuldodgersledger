@@ -19,8 +19,7 @@ function Unit:Register()
         self:RegisterEvent("UI_ERROR_MESSAGE")
 	    self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         self:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-        self:RegisterMessage(Events.Loot.PickPocketAttempt, "UpdateNamePlates")
-        self:RegisterMessage(Events.Loot.PickPocketComplete, "UpdateNamePlates")
+        self:RegisterMessage(Events.Loot.PickPocketComplete, "UpdateNamePlateFromEvent")
     end
     self:RegisterMessage(Events.UnitFrame.Toggle, "ToggleUnitFrame")
 end
@@ -29,14 +28,7 @@ function Unit:Unregister()
     self:UnregisterEvent("UI_ERROR_MESSAGE")
 	self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
     self:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
-    self:UnregisterMessage(Events.Loot.PickPocketAttempt)
     self:UnregisterMessage(Events.Loot.PickPocketComplete)
-end
-
-function Unit:OnEnable()
-    if self.settings.enabled then
-        self.updateTimer = self:ScheduleRepeatingTimer("UpdateNamePlates", self.settings.updateFrequencySeconds)
-    end
 end
 
 function Unit:ToggleUnitFrame(_, enabled)
@@ -44,14 +36,16 @@ function Unit:ToggleUnitFrame(_, enabled)
         return
     end
     if enabled then
-        self.updateTimer = self:ScheduleRepeatingTimer("UpdateNamePlates", self.settings.updateFrequencySeconds)
         self:Register()
     else
-        self:CancelTimer(self.updateTimer)
         self:ClearNamePlates()
         self:Unregister()
     end
     self.settings.enabled = enabled
+end
+
+function Unit:UpdateNamePlateFromEvent(_, event)
+    self:UpdateNamePlate(UnitTokenFromGUID(event.victim.guid))
 end
 
 function Unit:NAME_PLATE_UNIT_ADDED(event, unitId)

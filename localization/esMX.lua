@@ -7,6 +7,7 @@ local L = Addon.Localizations
 
 if  GetLocale() == "esMX" then
     L["The Artful Dodger's Ledger"] = "El Libro Mayor del Ladrón Astuto"
+    L["adl"] = "lmla"
     L["Humanoid"] = "Humanoide"
     L["Since"] = "Desde"
     L["Coin"] = "Moneda"
@@ -55,4 +56,17 @@ if  GetLocale() == "esMX" then
     L["Shows icon on UnitFrames to indicate a unit can likely be pick pocketed"] = ""
     L["Shows average purse size from victim in tooltip"] = "Muestra un ícono en UnitFrames para indicar que es probable que una unidad sea robada"
     L["Creates a button to easily unlock and open junkboxes"] = "Crea un botón para desbloquear y abrir fácilmente los buzones de chatarra"
+    L["Left-click to unlock or open"] = "Clic izquierdo para desbloquear o abrir"
+    L["Right-click and hold to move button"] = "Haga clic con el botón derecho y manténgalo presionado para mover el botón"
+    L["history"] = "historia"
+    L["Usage"] = "uso"
+    L["help"] = "ayuda"
+    L["session"] = "sesión"
+    L["toggle"] = "palanca"
+    L["reset"] = "reiniciar"
+    L["List all recorded statistics"] = "Listar todas las estadísticas registradas"
+    L["List current play session statistics"] = "Muestra las estadísticas de la sesión de juego actual"
+    L["Open or close the Addon window"] = "Abrir o cerrar la ventana del complemento"
+    L["Clear data from current play session"] = "Borrar datos de la sesión de juego actual"
+    L["Clear all data"] = "Borrar todos los datos"
 end

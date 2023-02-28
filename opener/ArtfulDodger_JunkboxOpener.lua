@@ -22,6 +22,14 @@ function Opener:OnInitialize()
     end
 end
 
+function Opener:init()
+    if self.settings.position.top > 0 and self.settings.position.left > 0 then
+        Frame:ClearAllPoints()
+        Frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.settings.position.left, self.settings.position.top)
+    end
+    self:Register()
+end
+
 function Opener:Register()
     if self.settings.enabled then
         self:RegisterEvent("BAG_UPDATE", "UpdateBag")
@@ -29,7 +37,8 @@ function Opener:Register()
         self:RegisterEvent("PLAYER_REGEN_ENABLED", "ShowFrame", true)
         self:RegisterEvent("PLAYER_ENTERING_BATTLEGROUND", "ShowFrame", false)
         self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShowFrame", true)
-        self:RegisterMessage(Events.Opener.BoxUpdate, "BoxUpdate")
+        self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+        self:RegisterEvent("LOOT_READY")
         self:RegisterMessage(Events.Opener.PosUpdate, "PositionUpdate")
     end
     self:RegisterMessage(Events.Opener.Toggle, "Toggle")
@@ -41,33 +50,43 @@ function Opener:Unregister()
     self:UnregisterEvent("PLAYER_REGEN_DISABLED")
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
     self:UnregisterEvent("BAG_UPDATE")
-    self:UnregisterMessage(Events.Opener.BoxUpdate)
+    self:UnregisterEvent("LOOT_READY")
     self:UnregisterMessage(Events.Opener.PosUpdate)
 end
 
-function Opener:BoxUpdate(_, bagSlot, locked)
-    if self.Junkboxes[bagSlot] then
-        if locked == true then
-            self.Junkboxes[bagSlot].state.locked = false
-            self.Junkboxes[bagSlot].state.level = 0
-        else
-            self.Junkboxes[bagSlot] = nil
+function Opener:UNIT_SPELLCAST_SUCCEEDED(event, target, guid, spellId)
+    if target == "player" and spellId == 1804 then    
+        if Frame.ArtfulDodger.Junkbox then
+            local guid = Frame.ArtfulDodger.Junkbox.guid
+            if self.Junkboxes[guid] then 
+                self.Junkboxes[guid].state = {locked = false, level = 0}
+                self:UpdateButton(self.Junkboxes[guid])
+            else
+                Frame:Clear()
+                self:NextBox()
+            end
         end
     end
-    self:NextBox()
+end
+
+function Opener:LOOT_READY(event, slotNumber)
+    for slot = 1, GetNumLootItems() do
+        local sources = {GetLootSourceInfo(slot)}
+        for source = 1, #sources, 2 do
+            local sourceGuid = sources[source]
+            if self.Junkboxes[sourceGuid] then
+                print("clearing box and frame")
+                self.Junkboxes[sourceGuid] = nil
+                Frame:Clear()
+                self:NextBox()
+            end
+        end
+    end
 end
 
 function Opener:PositionUpdate(_, top, left)
     self.settings.position.top = top
     self.settings.position.left = left
-end
-
-function Opener:init()
-    if self.settings.position.top > 0 and self.settings.position.left > 0 then
-        Frame:ClearAllPoints()
-        Frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", self.settings.position.left, self.settings.position.top)
-    end
-    self:Register()
 end
 
 function Opener:ShowFrame(show)
@@ -79,7 +98,7 @@ function Opener:ShowFrame(show)
 end
 
 function Opener:ShouldShowFrame()
-    return self.settings.enabled and not UnitInBattleground("player") and Opener.Junkboxes and Frame.ArtfulDodger.bagSlot
+    return self.settings.enabled and not UnitInBattleground("player") and Opener.Junkboxes and Frame.ArtfulDodger.Junkbox
 end
 
 function Opener:Toggle(_, enabled)
@@ -91,8 +110,7 @@ function Opener:Toggle(_, enabled)
         self:UpdateBags()
     else
         Opener.Junkboxes = {}
-        Frame.ArtfulDodger.bagSlot = nil
-        Frame.ArtfulDodger.locked = nil
+        Frame.ArtfulDodger.Junkbox = nil
         Frame:Hide()
         self:Unregister()
     end
@@ -106,47 +124,62 @@ function Opener:UpdateBags()
 end
 
 function Opener:UpdateBag(_, bagId)
-    for slot = 1, C_Container.GetContainerNumSlots(bagId) do
-        local bagSlot =  bagId.." "..slot
-        local item = C_Container.GetContainerItemInfo(bagId, slot)
-        if item and Loot.IsJunkbox(item.itemID) then
-            if self:HasItemChanged(bagId, slot, item) then
-                self.Junkboxes[bagSlot] = {link = item.hyperlink, icon = item.iconFileID, state = self:GetLockState(bagSlot)}
+    local updated = false
+    for slotId = 1, C_Container.GetContainerNumSlots(bagId) do
+        local item = Item:CreateFromBagAndSlot(bagId, slotId)
+        if item and Loot.IsJunkbox(item:GetItemID()) then
+            local guid = item:GetItemGUID()
+            local junkbox = self.Junkboxes[guid]
+            local state = self:GetLockState(bagId, slotId)
+            if junkbox then
+                if self:HasJunkboxChanged(junkbox, bagId, slotId, state) then
+                    self.Junkboxes[guid] = Opener:Junkbox(bagId, slotId, item, state)
+                    updated = true
+                end
+            else
+                self.Junkboxes[guid] = Opener:Junkbox(bagId, slotId, item, state)
+                updated = true
             end
-        elseif self.Junkboxes[bagSlot] then
-            self.Junkboxes[bagSlot] = nil
         end
     end
-    self:NextBox()
+    if updated then
+        self:NextBox()
+    end
 end
 
-function Opener:HasItemChanged(bagSlot, newItem)
-    return not self.Junkboxes[bagSlot] or self.Junkboxes[bagSlot].link ~= newItem.hyperlink or self.Junkboxes[bagSlot].state ~= self:GetLockState(bagSlot)
+function Opener:Junkbox(bagId, slotId, item, state)
+    return {bagId = bagId, slotId = slotId, guid = item:GetItemGUID(), name = item:GetItemName(), link = item:GetItemLink(), icon = item:GetItemIcon(), state = state}
+end
+
+function Opener:HasJunkboxChanged(junkbox, bagId, slotId, state)
+    return junkbox.bagId ~= bagId and junkbox.slotId ~= slotId and junkbox.state.locked ~= state.locked
 end
 
 function Opener:NextBox()
-    if not Frame.ArtfulDodger.bagSlot then
-        local bagSlot, item = next(self.Junkboxes)
-        self:UpdateButton(bagSlot, item)
-    elseif self.Junkboxes[Frame.ArtfulDodger.bagSlot] then
-        self:UpdateButton(Frame.ArtfulDodger.bagSlot, self.Junkboxes[Frame.ArtfulDodger.bagSlot])
+    if Frame.ArtfulDodger.Junkbox then
+        print("next box: found frame")
+        local guid = Frame.ArtfulDodger.Junkbox.guid
+        self:UpdateButton(self.Junkboxes[guid])
+    else
+        print("next box: next")
+        local _, junkbox = next(self.Junkboxes)
+        self:UpdateButton(junkbox)
     end
 end
 
-function Opener:UpdateButton(bagSlot, item)
-    if bagSlot and item then
+function Opener:UpdateButton(item)
+    if item then
+        Frame:SetNormalTexture(item.icon)
+        Frame.ArtfulDodger.Junkbox = item
         if self:CanUnlock(item.state) then
-            Frame:SetPickLock(bagSlot)
+            Frame:SetPickLock()
         elseif item.state.locked == false then
-            Frame:SetOpenBox(bagSlot)
+            Frame:SetOpenBox()
         else
-            Opener.Junkboxes[bagSlot] = nil
+            self.Junkboxes[item.guid] = nil
             Frame:Clear()
             return
         end
-        Frame:SetNormalTexture(item.icon)
-        Frame.ArtfulDodger.bagSlot = bagSlot
-        Frame.ArtfulDodger.locked = item.state.locked
         self:ShowFrame(true)
     else
         Frame:Clear()
@@ -163,12 +196,11 @@ function Opener:CanUnlock(state)
     return false
 end
 
-function Opener:GetLockState(bagSlot)
-    local bag, slot = strsplit(" ", bagSlot)
+function Opener:GetLockState(bagId, slotId)
     local state = {locked = false, level = 0}
 
     Tooltip:ClearLines()
-    Tooltip:SetBagItem(bag, slot)
+    Tooltip:SetBagItem(bagId, slotId)
     
     local lines = self:GetTooltipLines()
 

@@ -4,24 +4,15 @@ end
 
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Events = Addon.Events
+local L = Addon.Localizations
 local Frame = CreateFrame("Button", "ArtfulDodger_OpenerFrame", nil, "InsecureActionButtonTemplate")
 Addon.OpenerFrame = Frame
 
 Frame.ArtfulDodger = {}
 Frame:SetSize(50, 50)
 Frame:EnableMouse(true)
-Frame:RegisterForClicks("RightButtonUp", "RightButtonDown")
-Frame:RegisterForDrag("LeftButton")
-Frame:SetScript("PostClick", function(self, button, down) 
-    if button == "RightButton" and down == false then
-        Addon:SendMessage(Events.Opener.BoxUpdate, self.ArtfulDodger.bagSlot, self.ArtfulDodger.locked)
-        if self.ArtfulDodger.locked then
-            self.ArtfulDodger.locked = not self.ArtfulDodger.locked
-        else
-            self:Clear()
-        end
-    end
-end)
+Frame:RegisterForClicks("LeftButtonUp", "LeftButtonDown")
+Frame:RegisterForDrag("RightButton")
 Frame:SetMovable(true)
 Frame:SetScript("OnDragStart", function(self)
     self:StartMoving()
@@ -31,14 +22,13 @@ Frame:SetScript("OnDragStop", function(self)
     Addon:SendMessage(Events.Opener.PosUpdate, self:GetTop(), self:GetLeft())
 end)
 Frame:SetScript("OnEnter", function(self)
-    if self.ArtfulDodger.bagSlot then
-        local bag, slot = strsplit(" ", self.ArtfulDodger.bagSlot)
+    if self.ArtfulDodger.Junkbox then
         GameTooltip:SetOwner(self, "ANCHOR_NONE")
         GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMLEFT")
         GameTooltip:ClearLines()
-        GameTooltip:SetBagItem(bag, slot)
-        GameTooltip:AddLine("Right-click to pick lock or open")
-        GameTooltip:AddLine("Left-click and hold to move button")
+        GameTooltip:SetText(self.ArtfulDodger.Junkbox.name)
+        GameTooltip:AddLine(L["Left-click to unlock or open"])
+        GameTooltip:AddLine(L["Right-click and hold to move button"])
         GameTooltip:Show()
     end
 end)
@@ -47,20 +37,19 @@ Frame:SetScript("OnLeave", function()
 end)
 Frame:Hide()
 
-function Frame:SetPickLock(bagSlot)
-    local bag, slot = strsplit(" ", bagSlot)
+function Frame:SetPickLock()
     Frame:SetAttribute("type", "spell");
     Frame:SetAttribute("spell", "Pick Lock")
-    Frame:SetAttribute("target-bag", bag)
-    Frame:SetAttribute("target-slot", slot)
+    Frame:SetAttribute("target-bag", self.ArtfulDodger.Junkbox.bagId)
+    Frame:SetAttribute("target-slot", self.ArtfulDodger.Junkbox.slotId)
 end
 
-function Frame:SetOpenBox(bagSlot)
+function Frame:SetOpenBox()
+    local bagSlot = self.ArtfulDodger.Junkbox.bagId.." "..self.ArtfulDodger.Junkbox.slotId
     Frame:SetAttribute("type", "item")
     Frame:SetAttribute("item", bagSlot)
 end
 
 function Frame:Clear()
-    Frame.ArtfulDodger.bagSlot = nil
-    Frame.ArtfulDodger.locked = nil
+    Frame.ArtfulDodger.Junkbox = nil
 end

@@ -15,7 +15,7 @@ setmetatable(PickPocketTable, BaseTable)
 
 Addon.PickPocketTable = PickPocketTable
 
-local HEADERS = {
+PickPocketTable.Headers = {
 	{
 		name = L["Time"],
 		width = 90
@@ -43,7 +43,7 @@ local HEADERS = {
 }
 
 function PickPocketTable:New(datasource)
-	return setmetatable(BaseTable:New(datasource, HEADERS), self)
+	return setmetatable(BaseTable:New(datasource, self.Headers), self)
 end
 
 function PickPocketTable:Fill(start, finish)
@@ -54,9 +54,9 @@ function PickPocketTable:Fill(start, finish)
 			if event then
 				local row = self:Row()
 				row:AddChild(self:Cell(date(self.DATE_FORMAT, event.timestamp)))
-				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name))
-				row:AddChild(self:Cell(event.areaName))
-				row:AddChild(self:Cell(event.victim.name))
+				row:AddChild(self:Cell(C_Map.GetMapInfo(event.mapId).name:gsub(" ", "\n")))
+				row:AddChild(self:Cell(event.areaName:gsub(" ", "\n")))
+				row:AddChild(self:Cell(event.victim.name:gsub(" ", "\n")))
 				local icons = {}
 				local totalPrice = 0
 				for i = 1, #event.loot do

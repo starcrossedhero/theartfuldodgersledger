@@ -4,34 +4,40 @@ end
 
 local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Events = {
-    History = {},
-    Session = {},
-    Exclusions = {},
-    Loot    = {},
-    Map     = {},
-    Minimap = {},
-    Tooltip = {},
-    UI      = {},
-    UnitFrame = {},
-    Opener = {}
+    History = {
+        Reset = "ARTFULDODGER_RESET_HISTORY"
+    },
+    Session = {
+        Reset = "ARTFULDODGER_RESET_SESSION"
+    },
+    Exclusions = {
+        Reset = "ARTFULDODGER_RESET_EXCLUSIONS"
+    },
+    Loot    = {
+        PickPocketAttempt   = "ARTFULDODGER_LOOT_PICKPOCKET_ATTEMPT",
+        PickPocketComplete  = "ARTFULDODGER_LOOT_PICKPOCKET_COMPLETE",
+        Junkbox             = "ARTFULDODGER_LOOT_JUNKBOX"
+    },
+    Map     = {
+        Toggle = "ARTFULDODGER_MAP_TOGGLE"
+    },
+    Minimap = {
+        Toggle = "ARTFULDODGER_MINIMAP_TOGGLE"
+    },
+    Tooltip = {
+        Toggle = "ARTFULDODGER_TOOLTIP_TOGGLE"
+    },
+    UI      = {
+        Toggle = "ARTFULDODGER_UI_TOGGLE"
+    },
+    UnitFrame = {
+        Toggle = "ARTFULDODGER_UNITFRAME_TOGGLE"
+    },
+    Opener = {
+        Toggle    = "ARTFULDODGER_OPENER_TOGGLE",
+        BoxUpdate = "ARTFULDODGER_OPENER_BOXUPDATE",
+        PosUpdate = "ARTFULDODGER_OPENER_POSUPDATE"
+    }
 }
+
 Addon.Events = Events
-
-Events.History.Reset    = "ARTFULDODGER_RESET_HISTORY"
-Events.Session.Reset    = "ARTFULDODGER_RESET_SESSION"
-Events.Exclusions.Reset  = "ARTFULDODGER_RESET_EXCLUSIONS"
-
-Events.Loot.PickPocketAttempt  = "ARTFULDODGER_LOOT_PICKPOCKET_ATTEMPT"
-Events.Loot.PickPocketComplete  = "ARTFULDODGER_LOOT_PICKPOCKET_COMPLETE"
-Events.Loot.Junkbox     = "ARTFULDODGER_LOOT_JUNKBOX"
-
-Events.Map.Toggle       = "ARTFULDODGER_MAP_TOGGLE"
-Events.Minimap.Toggle   = "ARTFULDODGER_MINIMAP_TOGGLE"
-Events.Tooltip.Toggle   = "ARTFULDODGER_TOOLTIP_TOGGLE"
-Events.UI.Toggle        = "ARTFULDODGER_UI_TOGGLE"
-
-Events.UnitFrame.Toggle = "ARTFULDODGER_UNITFRAME_TOGGLE"
-
-Events.Opener.Toggle    = "ARTFULDODGER_OPENER_TOGGLE"
-Events.Opener.BoxUpdate = "ARTFULDODGER_OPENER_BOXUPDATE"
-Events.Opener.PosUpdate = "ARTFULDODGER_OPENER_POSUPDATE"

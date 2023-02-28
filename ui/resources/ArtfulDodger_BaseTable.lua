@@ -77,11 +77,12 @@ function bt:Row()
 	local row = AceGUI:Create("SimpleGroup")
 	row:SetFullWidth(true)
 	row:SetLayout("Flow")
-	row:SetHeight(20)
+	row:SetHeight(35)
+	row:SetAutoAdjustHeight(false)
     return row
 end
 
-function bt:Cell(label)
+function bt:Cell(label, width)
 	local cell = AceGUI:Create("Label")
 	cell:SetText(label)
 	cell:SetWidth(90)

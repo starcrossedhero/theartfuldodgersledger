@@ -15,7 +15,7 @@ setmetatable(JunkboxTable, BaseTable)
 
 Addon.JunkboxTable = JunkboxTable
 
-JunkboxTable.HEADERS = {
+JunkboxTable.Headers = {
 	{
 		name = L["Time"],
 		width = 90
@@ -35,7 +35,7 @@ JunkboxTable.HEADERS = {
 }
 
 function JunkboxTable:New(datasource)
-	return setmetatable(BaseTable:New(datasource, HEADERS), self)
+	return setmetatable(BaseTable:New(datasource, JunkboxTable.Headers), self)
 end
 
 function JunkboxTable:JunkboxCell(link, image, label)

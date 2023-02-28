@@ -21,8 +21,7 @@ local defaults = {
                 eventLimit = 100000
             },
             unitFrame = {
-                enabled = true,
-                updateFrequencySeconds = 5
+                enabled = true
             },
             tooltip = {
                 enabled = true
@@ -90,7 +89,7 @@ function Addon:ResetExclusions()
 end
 
 function Addon:UI_ERROR_MESSAGE(event, errorType, message)
-	if (message == ERR_ALREADY_PICKPOCKETED) then
+	if message == ERR_ALREADY_PICKPOCKETED then
         local guid = UnitGUID("target")
         if guid then
             if not Addon.RecentPickpockets[guid] then
@@ -120,21 +119,9 @@ function Addon:LOOT_READY(event, slotNumber)
             junkboxItem =  self.Loot.GetJunkboxFromGuid(sourceGuid)
             pickPocketEvent = Addon:GetLatestPickPocketByGuid(sourceGuid)
             if pickPocketEvent or junkboxItem then
-                local lootIcon, lootName, lootQuantity, _, _, _, _, _, _ = GetLootSlotInfo(slot)
-                if slot > 1 and lootName then
-                    local lootLink = GetLootSlotLink(slot)
-                    if lootLink then
-                        local item = Item:CreateFromItemLink(lootLink)
-                        if item:IsItemEmpty() == false then
-                            item:ContinueOnItemLoad(function()
-                                local itemSellPrice = select(11, GetItemInfo(lootLink))
-                                local itemId = item:GetItemID()
-                                table.insert(loot, self.Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, itemSellPrice))
-                            end)
-                        end
-                    end
-                else
-                    table.insert(loot, self.Loot:NewCoin(sourceGuid, self:GetCopperFromLootName(lootName)))
+                local lootItem = self:GetLootFromSlot(slot)
+                if lootItem then
+                    table.insert(loot, lootItem)
                 end
             end
         end
@@ -145,6 +132,27 @@ function Addon:LOOT_READY(event, slotNumber)
     elseif pickPocketEvent then
         Addon:SaveLootToPickPocketEvent(pickPocketEvent, loot)
     end
+end
+
+function Addon:GetLootFromSlot(slot)
+    local lootIcon, lootName, lootQuantity, _, _, _, _, _, _ = GetLootSlotInfo(slot)
+    local lootItem
+    if slot > 1 and lootName then
+        local lootLink = GetLootSlotLink(slot)
+        if lootLink then
+            local item = Item:CreateFromItemLink(lootLink)
+            if item:IsItemEmpty() == false then
+                item:ContinueOnItemLoad(function()
+                    local itemSellPrice = select(11, GetItemInfo(lootLink))
+                    local itemId = item:GetItemID()
+                    lootItem = self.Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, itemSellPrice)
+                end)
+            end
+        end
+    else
+        lootItem = self.Loot:NewCoin(sourceGuid, self:GetCopperFromLootName(lootName))
+    end
+    return lootItem
 end
 
 function Addon:SaveJunkboxLoot(timestamp, sourceGuid, junkboxItem, loot)
@@ -183,7 +191,6 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(event)
                     mapId,
                     areaName
                 )
-                Addon:SendMessage(self.Events.Loot.PickPocketAttempt, event)
                 Addon:SavePickPocketEvent(event)
             end
 		end
@@ -226,7 +233,8 @@ function Addon:GetLatestPickPocketByGuid(guid)
 end
 
 function Addon:SavePickPocketEvent(event)
-    Addon.RecentPickpockets[event.victim.guid] = {timestamp = time()}
+    self.RecentPickpockets[event.victim.guid] = {timestamp = time()}
+    self:SendMessage(self.Events.Loot.PickPocketAttempt, event)
     if event and self.db.settings.history.eventLimit >= #self.db.history.pickpocket then
         table.insert(self.db.history.pickpocket, event)
     end
