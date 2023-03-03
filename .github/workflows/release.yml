@@ -5,9 +5,9 @@ on:
       - '*'
 jobs:
   release:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - name: Create Archive Release
