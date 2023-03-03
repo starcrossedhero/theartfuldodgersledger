@@ -12,17 +12,17 @@ Map.timeSinceLastUpdate = 0
 Map.currentMapId = -1
 
 Map.Frame = CreateFrame("Frame", "ArtfulDodger_MapFrame", WorldMapFrame.ScrollContainer)
-Map.Frame:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 75, -40)
-Map.Frame:SetHeight(35)
+Map.Frame:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 75, -30)
+Map.Frame:SetHeight(25)
 
-Map.Frame.text = Map.Frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+Map.Frame.text = Map.Frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 Map.Frame.text:SetAllPoints(Map.Frame)
 Map.Frame.text:SetJustifyH("CENTER")
-Map.Frame:SetWidth(math.max(Map.Frame.text:GetWidth(), 300))
+Map.Frame:SetWidth(250)
 
 Map.Frame.texture = Map.Frame:CreateTexture(nil, "BACKGROUND")
-Map.Frame.texture:SetPoint("TOPLEFT", Map.Frame, -50, 10)
-Map.Frame.texture:SetPoint("BOTTOMRIGHT", Map.Frame, 50, -10)
+Map.Frame.texture:SetPoint("TOPLEFT", Map.Frame, -25, 5)
+Map.Frame.texture:SetPoint("BOTTOMRIGHT", Map.Frame, 25, -5)
 Map.Frame.texture:SetTexture(1115847)
 Map.Frame.texture:SetAtlas("adventureguide-pane-small")
 Map.Frame.texture:SetAlpha(0.95)

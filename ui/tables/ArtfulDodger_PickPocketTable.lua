@@ -66,7 +66,7 @@ function PickPocketTable:Fill(start, finish)
 					else
 						table.insert(icons, self:CoinCell(item.price))
 					end
-					totalPrice = totalPrice + item.price
+					totalPrice = totalPrice + (item.price or 0)
 				end
 				row:AddChild(self:Cell(GetCoinTextureString(totalPrice)))
 				if icons then

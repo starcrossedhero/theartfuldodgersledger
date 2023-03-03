@@ -25,7 +25,7 @@ function Tool.OnTooltipSetItem(tooltip, data)
             local guid = UnitGUID("mouseover")
             if guid then 
                 local npcId = select(6, strsplit("-", guid))
-                if npcId and Utils:IsValidTarget("mouseover") and Addon:HasPockets(npcId) then
+                if npcId and Utils:IsValidTarget("mouseover", npcId) and Addon:HasPockets(npcId) then
                     tooltip:AddLine(L["Typical Purse"]..": "..GetCoinTextureString(Stats:GetAverageCoinByNpcId(npcId)))
                 end
             end

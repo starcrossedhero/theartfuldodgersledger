@@ -6,9 +6,27 @@ local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
 local Events = Addon.Events
 local L = Addon.Localizations
 local Frame = CreateFrame("Button", "ArtfulDodger_OpenerFrame", nil, "InsecureActionButtonTemplate")
+local Counter = CreateFrame("Frame", "ArtfulDodger_OpenerCounter", Frame)
+Counter:SetPoint("TOPRIGHT", Frame, 5, 5)
+Counter:SetHeight(10)
+Counter:SetWidth(10)
+Counter.text = Counter:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+Counter.text:SetAllPoints(Counter)
+Counter.text:SetJustifyH("CENTER")
+
+Counter.texture = Counter:CreateTexture(nil, "BACKGROUND")
+Counter.texture:SetPoint("TOPLEFT", Counter.text, -3, 3)
+Counter.texture:SetPoint("BOTTOMRIGHT", Counter.text, 3, -3)
+Counter.texture:SetTexture(1115847)
+Counter.texture:SetAtlas("adventureguide-pane-small")
+Counter.texture:SetAlpha(0.95)
+
+Frame.Counter = Counter
+
 Addon.OpenerFrame = Frame
 
 Frame.ArtfulDodger = {}
+Frame:SetText("TEST")
 Frame:SetSize(50, 50)
 Frame:EnableMouse(true)
 Frame:RegisterForClicks("LeftButtonUp", "LeftButtonDown")

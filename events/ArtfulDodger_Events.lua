@@ -22,7 +22,8 @@ local Events = {
         Toggle = "ARTFULDODGER_MAP_TOGGLE"
     },
     Minimap = {
-        Toggle = "ARTFULDODGER_MINIMAP_TOGGLE"
+        Toggle = "ARTFULDODGER_MINIMAP_TOGGLE",
+        IdleThreshold = "ARTFULDODGER_MINIMAP_IDLETHRESHOLD"
     },
     Tooltip = {
         Toggle = "ARTFULDODGER_TOOLTIP_TOGGLE"

@@ -18,6 +18,7 @@ local defaults = {
         session = {
             start = 0,
             duration = 0,
+            recent = 0,
             thefts = 0,
             copper = 0
         },

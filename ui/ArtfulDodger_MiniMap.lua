@@ -11,7 +11,7 @@ local L = Addon.Localizations
 Minimap.Title = L["The Artful Dodger's Ledger"]
 Minimap.Gold = "|cffeec300"
 Minimap.White = "|cffFFFFFF"
-Minimap.StatusString = Minimap.Gold..L["Victims"]..":|r "..Minimap.White.."%d|r   "..Minimap.Gold..L["Coin"]..":|r "..Minimap.White.."%s|r  "..Minimap.Gold..L["Per Hour"]..":|r  "..Minimap.White.."%s|r"..Minimap.Gold.."  "..L["Per Victim"]..":|r  "..Minimap.White.."%s|r"
+Minimap.StatusString = Minimap.Gold..L["Per Hour"]..":|r  "..Minimap.White.."%s|r"..Minimap.Gold.."  "..L["Per Victim"]..":|r  "..Minimap.White.."%s|r"
 Minimap.timeSinceLastUpdate = 0
 
 Minimap.Button = LibStub("LibDBIcon-1.0")
@@ -20,8 +20,6 @@ Minimap.Datasource = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject(Minim
     type = "data source", 
     icon = "Interface\\Icons\\INV_Misc_Bag_11", 
     text = string.format(Minimap.StatusString, 
-        0,
-        GetCoinTextureString(0),
         GetCoinTextureString(0), 
         GetCoinTextureString(0)
     )
@@ -31,6 +29,7 @@ function Minimap:OnEnable()
     self.settings = Addon.db.settings.minimap
     self.Button:Register(Minimap.Title, Minimap.Datasource, self.settings)
     self:RegisterMessage(Events.Minimap.Toggle, "Toggle")
+    self:RegisterMessage(Events.Minimap.IdleThreshold, "UpdateIdleThreshold", value)
 end
 
 function Minimap:Toggle(_, hide)
@@ -45,10 +44,20 @@ function Minimap:Toggle(_, hide)
     self.settings.hide = hide
 end
 
+function Minimap:UpdateIdleThreshold(value)
+    self.settings.idleThresholdSeconds = value
+    print(value)
+end
+
 function Minimap:Reset()
     self.Datasource.text = string.format(Minimap.StatusString, 
-        Stats.db.session.thefts,
-        GetCoinTextureString(Stats.db.session.copper),
+        GetCoinTextureString(Stats:GetSessionCopperPerHour()),
+        GetCoinTextureString(Stats:GetSessionCopperPerVictim())
+    )
+end
+
+function Minimap:Update()
+    self.Datasource.text = string.format(Minimap.StatusString,
         GetCoinTextureString(Stats:GetSessionCopperPerHour()),
         GetCoinTextureString(Stats:GetSessionCopperPerVictim())
     )
@@ -58,17 +67,17 @@ Minimap.Display = CreateFrame("Frame", "ArtfulDodger_MinimapUpdate")
 Minimap.Display:SetScript("OnUpdate", function(self, elapsed)
     Minimap.timeSinceLastUpdate = Minimap.timeSinceLastUpdate + elapsed
     if Minimap.timeSinceLastUpdate > Minimap.settings.updateFrequencySeconds then
-        Minimap.timeSinceLastUpdate = 0
         if Stats.db then
-            local duration = time() - Stats.db.session.start
-            Minimap.Datasource.text = string.format(Minimap.StatusString, 
-                Stats.db.session.thefts,
-                GetCoinTextureString(Stats.db.session.copper),
-                GetCoinTextureString(Stats:GetSessionCopperPerHour()),
-                GetCoinTextureString(Stats:GetSessionCopperPerVictim())
-            )
-            Stats.db.session.duration = duration
+            local latest = Addon.db.history.pickpocket[#Addon.db.history.pickpocket]
+            if latest and latest.timestamp then
+                local timeSinceLastPickPocket = (time() - latest.timestamp)
+                if timeSinceLastPickPocket < Minimap.settings.idleThresholdSeconds then
+                    Stats.db.session.duration =  Stats.db.session.duration + Minimap.timeSinceLastUpdate
+                    Minimap:Update()
+                end
+            end
         end
+        Minimap.timeSinceLastUpdate = 0
     end
 end)
 

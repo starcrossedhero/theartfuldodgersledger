@@ -108,7 +108,7 @@ function Opener:Toggle(_, enabled)
         self:init()
         self:UpdateBags()
     else
-        Opener.Junkboxes = {}
+        self.Junkboxes = {}
         Frame.ArtfulDodger.Junkbox = nil
         Frame:Hide()
         self:Unregister()
@@ -121,6 +121,15 @@ function Opener:UpdateBags()
         self:UpdateBag(_, bagId)
     end
 end
+
+function Opener:getTableSize()
+    local count = 0
+    for _, _ in pairs(self.Junkboxes) do
+        count = count + 1
+    end
+    return count
+end
+
 
 function Opener:UpdateBag(_, bagId)
     local updated = false
@@ -167,6 +176,9 @@ end
 function Opener:UpdateButton(item)
     if item then
         Frame:SetNormalTexture(item.icon)
+        if self.Junkboxes then
+            Frame.Counter.text:SetText(self:getTableSize())
+        end
         Frame.ArtfulDodger.Junkbox = item
         if self:CanUnlock(item.state) then
             Frame:SetPickLock()

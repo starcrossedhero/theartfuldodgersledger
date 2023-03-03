@@ -19,10 +19,12 @@ ArtfulDodger_Stats.lua
 ArtfulDodger_ChatCommands.lua
 opener\ArtfulDodger_OpenerFrame.lua
 opener\ArtfulDodger_JunkboxOpener.lua
-ui\resources\ArtfulDodger_Utils.lua
-ui\resources\ArtfulDodger_BaseTable.lua
-ui\resources\ArtfulDodger_PickPocketTable.lua
-ui\resources\ArtfulDodger_JunkboxTable.lua
+utils\CreatureTypeExceptions.lua
+utils\CreatureTypes.lua
+utils\ArtfulDodger_Utils.lua
+ui\tables\ArtfulDodger_BaseTable.lua
+ui\tables\ArtfulDodger_PickPocketTable.lua
+ui\tables\ArtfulDodger_JunkboxTable.lua
 ui\ArtfulDodger_Map.lua
 ui\ArtfulDodger_UI.lua
 ui\ArtfulDodger_MiniMap.lua

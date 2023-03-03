@@ -11,7 +11,8 @@ local defaults = {
 			minimap = {
 				hide = false,
 				minimapPos = 136.23,
-                updateFrequencySeconds = 1
+                updateFrequencySeconds = 1,
+                idleThresholdSeconds = 30
 			},
             map = {
                 enabled = true,
@@ -102,7 +103,7 @@ function Addon:UI_ERROR_MESSAGE(event, errorType, message)
         if guid then
             local npcId = select(6, strsplit("-", guid))
             if npcId then
-                table.insert(self.db.exclusions, npcId)
+                self.db.exclusions[npcId] = true
             end
         end
         table.remove(self.db.history.pickpocket)
@@ -143,9 +144,15 @@ function Addon:GetLootFromSlot(slot)
             local item = Item:CreateFromItemLink(lootLink)
             if item:IsItemEmpty() == false then
                 item:ContinueOnItemLoad(function()
-                    local itemSellPrice = select(11, GetItemInfo(lootLink))
+                    local sellPrice
                     local itemId = item:GetItemID()
-                    lootItem = self.Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, itemSellPrice)
+                    local junkboxItem = self.Loot.GetJunkboxFromItemId(itemId)
+                    if junkboxItem then
+                        sellPrice = junkboxItem.price
+                    else
+                        sellPrice = select(11, GetItemInfo(lootLink))
+                    end
+                    lootItem = self.Loot:NewItem(sourceGuid, itemId, lootName, lootLink, lootIcon, lootQuantity, sellPrice)
                 end)
             end
         end
@@ -214,12 +221,7 @@ function Addon:HasLootRespawned(event)
 end
 
 function Addon:HasPockets(npcId)
-    for i = 1, #self.db.exclusions do
-        if self.db.exclusions[i] == npcId then
-            return false
-        end
-    end
-    return true
+    return not self.db.exclusions[npcId]
 end
 
 function Addon:GetLatestPickPocketByGuid(guid)
