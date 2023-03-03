@@ -5,7 +5,7 @@
 ## OptionalDeps: Ace3
 ## X-Embeds: Ace3
 ## Author: starcrossedhero
-## Version: 0.6
+## Version: v0.0.6-alpha
 
 embeds.xml
 ArtfulDodger_Core.lua
