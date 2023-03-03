@@ -15,7 +15,7 @@ Loot.COIN_LINK = "|cFFCC9900"..Loot.COIN_NAME.."|r"
 Loot.COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
 
 --prices pulled from wowhead
-Loot.JUNKBOXES = {
+Loot.Junkboxes = {
 	{itemId=16882, price=74},
 	{itemId=16883, price=124},
 	{itemId=16884, price=254},
@@ -25,6 +25,35 @@ Loot.JUNKBOXES = {
     {itemId=29569, price=371},
     {itemId=88165, price=12786},
     {itemId=106895, price=12786}
+}
+
+--not soulbound, only including for opener to open not track loot
+Loot.Lockboxes = {
+    190954, 
+    180532, 
+    180522, 
+    169475, 
+    179311, 
+    180533, 
+    186161, 
+    121331, 
+    116920, 
+    88567, 
+    68729, 
+    45986, 
+    43624, 
+    43622, 
+    31952, 
+    5760, 
+    5759, 
+    5758, 
+    4638, 
+    4637, 
+    4636, 
+    4634, 
+    4633, 
+    4632, 
+    191296 
 }
 
 function Loot:New(sourceGuid, id, name, link, icon, quantity, price, isItem)
@@ -58,30 +87,39 @@ function Loot:NewCoin(sourceGuid, price)
 end
 
 function Loot.CacheJunkboxInfo()
-    for i = 1, #Loot.JUNKBOXES do
-        if not Loot.JUNKBOXES[i].name then
-            local item = Item:CreateFromItemID(Loot.JUNKBOXES[i].itemId)
+    for i = 1, #Loot.Junkboxes do
+        if not Loot.Junkboxes[i].name then
+            local item = Item:CreateFromItemID(Loot.Junkboxes[i].itemId)
             item:ContinueOnItemLoad(function()
-                Loot.JUNKBOXES[i].name = item:GetItemName() 
-                Loot.JUNKBOXES[i].icon = item:GetItemIcon()
-                Loot.JUNKBOXES[i].link = item:GetItemLink()
+                Loot.Junkboxes[i].name = item:GetItemName() 
+                Loot.Junkboxes[i].icon = item:GetItemIcon()
+                Loot.Junkboxes[i].link = item:GetItemLink()
             end)
         end
     end
 end
 
 function Loot.GetDefaultJunkboxPrice(itemId)
-	for i = 1, #Loot.JUNKBOXES do
-        if Loot.JUNKBOXES[i].itemId == itemId then
-            return Loot.JUNKBOXES[i].price 
+	for i = 1, #Loot.Junkboxes do
+        if Loot.Junkboxes[i].itemId == itemId then
+            return Loot.Junkboxes[i].price 
         end
     end
 	return nil
 end
 
 function Loot.IsJunkbox(itemId)
-	for i = 1, #Loot.JUNKBOXES do
-        if Loot.JUNKBOXES[i].itemId == itemId then
+	for i = 1, #Loot.Junkboxes do
+        if Loot.Junkboxes[i].itemId == itemId then
+            return true
+        end
+    end
+	return false
+end
+
+function Loot.IsLockbox(itemId)
+	for i = 1, #Loot.Lockboxes do
+        if Loot.Lockboxes[i] == itemId then
             return true
         end
     end
@@ -90,26 +128,26 @@ end
 
 function Loot.GetJunkboxList()
     local junkboxes = {}
-    for i = 1, #Loot.JUNKBOXES do
-        junkboxes[Loot.JUNKBOXES[i].itemId] = Loot.JUNKBOXES[i].name
+    for i = 1, #Loot.Junkboxes do
+        junkboxes[Loot.Junkboxes[i].itemId] = Loot.Junkboxes[i].name
     end
 	return junkboxes
 end
 
 function Loot.GetJunkboxFromGuid(guid)
     local itemIdFromGuid = C_Item.GetItemIDByGUID(guid)
-	for i = 1, #Loot.JUNKBOXES do
-        if Loot.JUNKBOXES[i].itemId == itemIdFromGuid then
-            return Loot.JUNKBOXES[i]
+	for i = 1, #Loot.Junkboxes do
+        if Loot.Junkboxes[i].itemId == itemIdFromGuid then
+            return Loot.Junkboxes[i]
         end
     end
 	return nil
 end
 
 function Loot.GetJunkboxFromItemId(id)
-	for i = 1, #Loot.JUNKBOXES do
-        if Loot.JUNKBOXES[i].itemId == id then
-            return Loot.JUNKBOXES[i]
+	for i = 1, #Loot.Junkboxes do
+        if Loot.Junkboxes[i].itemId == id then
+            return Loot.Junkboxes[i]
         end
     end
 	return nil

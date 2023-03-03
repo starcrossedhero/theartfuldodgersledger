@@ -135,18 +135,20 @@ function Opener:UpdateBag(_, bagId)
     local updated = false
     for slotId = 1, C_Container.GetContainerNumSlots(bagId) do
         local item = Item:CreateFromBagAndSlot(bagId, slotId)
-        if item and Loot.IsJunkbox(item:GetItemID()) then
-            local guid = item:GetItemGUID()
-            local junkbox = self.Junkboxes[guid]
-            local state = self:GetLockState(bagId, slotId)
-            if junkbox then
-                if self:HasJunkboxChanged(junkbox, bagId, slotId, state) then
+        if item then
+            if Loot.IsJunkbox(item:GetItemID()) or Loot.IsLockbox(item:GetItemID()) then
+                local guid = item:GetItemGUID()
+                local junkbox = self.Junkboxes[guid]
+                local state = self:GetLockState(bagId, slotId)
+                if junkbox then
+                    if self:HasJunkboxChanged(junkbox, bagId, slotId, state) then
+                        self.Junkboxes[guid] = Opener:Junkbox(bagId, slotId, item, state)
+                        updated = true
+                    end
+                else
                     self.Junkboxes[guid] = Opener:Junkbox(bagId, slotId, item, state)
                     updated = true
                 end
-            else
-                self.Junkboxes[guid] = Opener:Junkbox(bagId, slotId, item, state)
-                updated = true
             end
         end
     end
