@@ -18,7 +18,6 @@ local defaults = {
         session = {
             start = 0,
             duration = 0,
-            recent = 0,
             thefts = 0,
             copper = 0
         },
@@ -231,8 +230,8 @@ end
 function Stats:PrettyPrint(date, copper, count, average)
     local date = string.format(L["Since"]..self:SubColors(" ^WHITE%s|r"), date)
     local count = string.format(self:SubColors(L["You've ^REDpicked pockets|r of ^WHITE%d|r victim(s)"]), count)
-    local total = string.format(self:SubColors(L["You've ^REDpilfered|r a total of ^WHITE%s|r in ill-gotten ^GREENgains|r"]), copper)
-    local average = string.format(self:SubColors(L["You've ^REDstolen|r an average of ^WHITE%s|r per victim"]), average)
+    local total = string.format(self:SubColors(L["You've ^REDpilfered|r a total of ^WHITE%s|r"]), copper)
+    local average = string.format(self:SubColors(L["You've ^REDpurloined|r an average of ^WHITE%s|r per victim"]), average)
     return string.format("\n%s\n\n%s\n%s\n%s", date, count, total, average)
 end
 

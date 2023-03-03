@@ -11,7 +11,7 @@ local L = Addon.Localizations
 Minimap.Title = L["The Artful Dodger's Ledger"]
 Minimap.Gold = "|cffeec300"
 Minimap.White = "|cffFFFFFF"
-Minimap.StatusString = Minimap.Gold..L["Per Hour"]..":|r  "..Minimap.White.."%s|r"..Minimap.Gold.."  "..L["Per Victim"]..":|r  "..Minimap.White.."%s|r"
+Minimap.StatusString = Minimap.White.."%s|r"..Minimap.Gold.." /"..L["Hour"].."|r  "..Minimap.White.."%s|r"..Minimap.Gold.." /"..L["Victim"].."|r"
 Minimap.timeSinceLastUpdate = 0
 
 Minimap.Button = LibStub("LibDBIcon-1.0")
@@ -46,7 +46,6 @@ end
 
 function Minimap:UpdateIdleThreshold(value)
     self.settings.idleThresholdSeconds = value
-    print(value)
 end
 
 function Minimap:Reset()
