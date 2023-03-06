@@ -15,9 +15,9 @@ jobs:
       - name: Create Archive Release
         uses: thedoctor0/zip-release@master
         with:
-          filename: 'ArtfulDodger.zip'
+          filename: 'TheArtfulDodgersLedger.zip'
           exclusions: '*.git*'
       - name: Upload Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: 'ArtfulDodger.zip'
+          artifacts: 'TheArtfulDodgersLedger.zip'
