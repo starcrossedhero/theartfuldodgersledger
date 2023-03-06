@@ -238,18 +238,3 @@ end
 function Stats:SubColors(string)
     return string:gsub("%^RED", RED_FONT_COLOR_CODE):gsub("%^GREEN", GREEN_FONT_COLOR_CODE):gsub("%^BLUE", BLUE_FONT_COLOR_CODE):gsub("%^WHITE", WHITE_FONT_COLOR_CODE):gsub("%^GOLD", GOLD_FONT_COLOR_CODE)
 end
-
---string:gsub("^R", RED_FONT_COLOR)
---string:gsub("^G", GREEN_FONT_COLOR)
---string:gsub("^B", BLUE_FONT_COLOR)
---string:gsub("^W", WHITE_FONT_COLOR)
---string:gsub("^E", "|r")
-
---Since ^W%d|r your ^Rhistoric|r pilfering has ^Gincreased|r your stash by ^W%d|r
---Desde ^W%d|r tu robo ^Rhistorico|r ha ^Gaumentado|r tu riqueza en ^W%d|r
-
---You've ^Rpicked pockets|r of ^W%d|r victim(s)
---Has ^Rrobado los bolsillos|r de ^W%d|r víctima(s)
-
---You've ^Rstolen|r an average of ^W%s|r from each victim"
---Le has ^Rrobado|r un promedio de ^W%d|r a cada víctima"
