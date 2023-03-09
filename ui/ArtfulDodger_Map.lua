@@ -86,3 +86,21 @@ function Map:Toggle(_, enabled)
     end
     self.settings.enabled = enabled
 end
+
+function Map:Resize(maximize)
+    Map.Frame:ClearAllPoints()
+
+    if maximize then
+        Map.Frame:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 150, 30)
+    else
+        Map.Frame:SetPoint("BOTTOMLEFT", WorldMapFrame.ScrollContainer, 75, -30)
+    end
+end
+
+WorldMapFrame.BorderFrame.MaximizeMinimizeFrame.MaximizeButton:HookScript("PreClick", function(self)
+	Map:Resize(true)
+end)
+
+WorldMapFrame.BorderFrame.MaximizeMinimizeFrame.MinimizeButton:HookScript("PreClick", function(self)
+	Map:Resize(false)
+end)
