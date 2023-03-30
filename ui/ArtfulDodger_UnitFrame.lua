@@ -9,7 +9,6 @@ local L = Addon.Localizations
 local Utils = Addon.Utils
 
 function Unit:OnInitialize()
-    self.db = Addon.dbo:RegisterNamespace("UnitFrame", defaults).char
     self.settings = Addon.db.settings.unitFrame
     self:Register()
 end
