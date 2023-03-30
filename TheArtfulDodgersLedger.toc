@@ -1,11 +1,11 @@
-## Interface: 100005
+## Interface: 100007
 ## Title: The Artful Dodger's Ledger
 ## Notes: Track your accumulation of pilfered goods
 ## SavedVariables: ArtfulDodgerDB
 ## OptionalDeps: Ace3
 ## X-Embeds: Ace3
 ## Author: starcrossedhero
-## Version: v0.0.8-alpha
+## Version: v0.0.9-alpha
 
 embeds.xml
 ArtfulDodger_Core.lua
@@ -26,6 +26,7 @@ ui\tables\ArtfulDodger_BaseTable.lua
 ui\tables\ArtfulDodger_PickPocketTable.lua
 ui\tables\ArtfulDodger_JunkboxTable.lua
 ui\ArtfulDodger_Map.lua
+ui\ArtfulDodger_Pins.lua
 ui\ArtfulDodger_UI.lua
 ui\ArtfulDodger_MiniMap.lua
 ui\ArtfulDodger_Tooltip.lua

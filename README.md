@@ -19,7 +19,8 @@ The ledger keeps an accounting of all your successful thefts, and looted junkbox
 
 ### World Map
 
-The ledger provides access to pick pocket statistics per zone right from the World Map
+* The ledger provides access to pick pocket statistics per zone right from the World Map
+* Displays an icon at the location of each successful pick pocket on the zone map
 
 ### Unit Frame
 

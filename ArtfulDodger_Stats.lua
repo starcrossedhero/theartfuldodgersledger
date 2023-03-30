@@ -8,37 +8,37 @@ local Events = Addon.Events
 local L = Addon.Localizations
 
 local defaults = {
-	char = {
-        history = {
-            start = 0,
-            duration = 0,
-            thefts = 0,
-            copper = 0
-        },
-        session = {
-            start = 0,
-            duration = 0,
-            thefts = 0,
-            copper = 0
-        },
-        junkboxes = {},
-        maps = {}
-    }
+    history = {
+        start = 0,
+        duration = 0,
+        thefts = 0,
+        copper = 0
+    },
+    session = {
+        start = 0,
+        duration = 0,
+        thefts = 0,
+        copper = 0
+    },
+    junkboxes = {},
+    maps = {}
 }
 
 Stats.DefaultSession = function()
-    return Addon.ShallowCopy(defaults.char.session)
+    return Addon.ShallowCopy(defaults.session)
 end
 
 Stats.DefaultHistory = function()
-    return Addon.ShallowCopy(defaults.char.history)
+    return Addon.ShallowCopy(defaults.history)
 end
 
 function Stats:OnInitialize()
-    self.dbo = Addon.dbo:RegisterNamespace("Stats", defaults)
-    self.db = self.dbo.char
+    self.db = Addon.db.stats
     self.db.session = self.DefaultSession()
 	self.db.session.start = time()
+    if not self.db.history then
+        self.db.history = self.DefaultHistory()
+    end
 	if self.db.history.start <= 0 then
 		self.db.history.start = self.db.session.start
 	end

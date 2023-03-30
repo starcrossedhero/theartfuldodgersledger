@@ -3,6 +3,7 @@ if select(3, UnitClass("player")) ~= 4 then
 end
 
 local Addon = LibStub("AceAddon-3.0"):NewAddon("ArtfulDodger", "AceEvent-3.0")
+local hbd  = LibStub("HereBeDragons-2.0")
 
 local defaults = {
 	char = {
@@ -17,6 +18,9 @@ local defaults = {
             map = {
                 enabled = true,
                 updateFrequencySeconds = 0.3
+            },
+            pins = {
+                enabled = false
             },
             history = {
                 eventLimit = 100000
@@ -39,6 +43,7 @@ local defaults = {
             pickpocket = {},
             junkboxes = {}
         },
+        stats = {},
         exclusions = {}
 	}
 }
@@ -190,13 +195,16 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(event)
 	if self:IsNewPickPocketEvent(sourceGuid, spellId) then
 		if subEvent == "SPELL_CAST_SUCCESS" then
             local destNpcId = strsplittable("-", destGuid)[6]
-            local mapId = C_Map.GetBestMapForUnit("player")
+            local x, y, mapId, mapType = hbd:GetPlayerZonePosition(true)
             local areaName = GetSubZoneText()
+
             if destNpcId and mapId then
                 local event = self.PickPocketEvent:New(time(), 
                     {name = destName, guid = destGuid, npcId = destNpcId, level = UnitLevel("target")}, 
                     mapId,
-                    areaName
+                    areaName,
+                    x,
+                    y
                 )
                 Addon:SavePickPocketEvent(event)
             end

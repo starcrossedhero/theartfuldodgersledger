@@ -9,7 +9,7 @@ PickPocketEvent.__index = PickPocketEvent
 
 Addon.PickPocketEvent = PickPocketEvent
 
-function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, eventLoot)
+function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, eventX, eventY, eventLoot)
 	local self = {}
 	setmetatable(self, PickPocketEvent)
 
@@ -18,13 +18,15 @@ function PickPocketEvent:New(eventTime, eventVictim, eventMapId, eventAreaName, 
 	self.victim = eventVictim or {}
 	self.mapId = eventMapId or ""
     self.areaName = eventAreaName or ""
+	self.x = eventX
+	self.y = eventY
 	self.loot = eventLoot or {}
 
 	return self
 end
 
 function PickPocketEvent:ToString()
-	return string.format("PickPocketEvent: timestamp=%d, victim=%s, mapId=%s, areaName=%s, loot=%d", self.timestamp, self.victim.guid, self.mapId, self.areaName, #self.loot)
+	return string.format("PickPocketEvent: timestamp=%d, victim=%s, mapId=%s, x=%s, y=%s, areaName=%s, loot=%d", self.timestamp, self.victim.guid, self.mapId, self.areaName, self.x, self.y, #self.loot)
 end
 
 function PickPocketEvent:GetCopperFromLoot()
