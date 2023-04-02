@@ -39,6 +39,12 @@ function Stats:OnInitialize()
     if not self.db.history then
         self.db.history = self.DefaultHistory()
     end
+    if not self.db.maps then
+        self.db.maps = {}
+    end
+    if not self.db.junkboxes then
+        self.db.junkboxes = {}
+    end
 	if self.db.history.start <= 0 then
 		self.db.history.start = self.db.session.start
 	end
