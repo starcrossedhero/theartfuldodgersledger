@@ -275,7 +275,7 @@ function Addon:GetPickpocketState(unit, guid)
         or (not knownPickpocketable and not IsHumanoidUnit(unit)) then
         return nil
     end
-    return "likely"
+    return "likely", nil, nil, knownPickpocketable == true
 end
 
 --========== event plumbing ==========

@@ -17,6 +17,7 @@ local COLOR = { robbed = { 0.60, 0.60, 0.60 } }
 -- nameplate frames are recycled; cache one fontstring per parent frame
 local attached = setmetatable({}, { __mode = "k" })
 local icons = setmetatable({}, { __mode = "k" })
+local borders = setmetatable({}, { __mode = "k" })
 local cooldowns = setmetatable({}, { __mode = "k" })
 local pickpocketIcon = "Interface\\Icons\\Ability_Sap"
 if C_Spell and type(C_Spell.GetSpellTexture) == "function" then
@@ -45,6 +46,8 @@ local function Hide(parent)
     if fs then fs:Hide() end
     local icon = parent and icons[parent]
     if icon then icon:Hide() end
+    local border = parent and borders[parent]
+    if border then border:Hide() end
     local cooldown = parent and cooldowns[parent]
     if cooldown then cooldown:Hide() end
 end
@@ -80,6 +83,19 @@ local function IconFor(parent, point, relativePoint, x, y, configuredSize)
     return icon
 end
 
+local function BorderFor(parent, icon)
+    local border = borders[parent]
+    if not border then
+        border = parent:CreateTexture(nil, "OVERLAY", nil, -1)
+        border:SetColorTexture(1, 0.72, 0.05, 1)
+        borders[parent] = border
+    end
+    border:ClearAllPoints()
+    border:SetPoint("CENTER", icon, "CENTER")
+    border:SetSize(icon:GetWidth() + 4, icon:GetHeight() + 4)
+    return border
+end
+
 local function CooldownFor(parent, icon)
     local cooldown = cooldowns[parent]
     if not cooldown then
@@ -108,13 +124,17 @@ local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey, paddingK
     if not settings or not settings[enabledKey] then Hide(parent); return end
     if not unit then Hide(parent); return end
     local point, relativePoint, x, y = BadgeAnchor(settings[positionKey], settings[paddingKey])
-    local state, remaining, duration = GetState(unit)
+    local state, remaining, duration, confirmed = GetState(unit)
+    local border = borders[parent]
+    if border then border:Hide() end
     if state == "likely" then
         local fs = attached[parent]
         if fs then fs:Hide() end
         local cooldown = cooldowns[parent]
         if cooldown then cooldown:Hide() end
-        IconFor(parent, point, relativePoint, x, y, settings[sizeKey]):Show()
+        local icon = IconFor(parent, point, relativePoint, x, y, settings[sizeKey])
+        icon:Show()
+        if not confirmed then BorderFor(parent, icon):Show() end
         return
     end
     if state == "cooldown" then
