@@ -11,7 +11,7 @@ if not Addon then return end
 local Badges = {}
 ns.Badges = Badges
 
-local TEXT  = { robbed = "Emptied" }
+local TEXT  = { robbed = ns.Voice.emptied }
 local COLOR = { robbed = { 0.60, 0.60, 0.60 } }
 
 -- nameplate frames are recycled; cache one fontstring per parent frame
@@ -201,7 +201,7 @@ local function HandleEvent(event, arg1)
             Badges:RefreshPlate(arg1)
         end
     elseif event == "UI_ERROR_MESSAGE" then
-        C_Timer.After(0.1, function()      -- let Core learn barrenness first
+        C_Timer.After(0.1, function()      -- let Core learn pocketlessness first
             RefreshTarget()
             RefreshAllPlates()
         end)

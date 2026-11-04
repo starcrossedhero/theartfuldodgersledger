@@ -10,6 +10,10 @@ local provider
 local refreshPending = false
 local refreshGeneration = 0
 local mapShowHooked = false
+local MAP_PICKS = "Pockets Lifted"
+local MAP_GAINS = "Ill-Gotten Gains"
+local MAP_PURSE = "Typical Purse"
+local MAP_ITEMS = "Possible Take"
 
 local function LocationPosition(location, sourceMapID, targetMapID)
     local x, y = tonumber(location.positionX), tonumber(location.positionY)
@@ -31,17 +35,18 @@ local function ShowLocationTooltip(pin)
     if not location then return end
 
     GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
-    GameTooltip:SetText(location.subzone or location.zone or "Pickpocket location")
+    GameTooltip:SetText(location.subzone or location.zone or "Known Haunt")
     if location.zone and location.subzone and location.zone ~= location.subzone then
         GameTooltip:AddLine(location.zone, 0.75, 0.75, 0.75)
     end
 
+    local indent = "  "
     local picks = tonumber(location.picks) or 0
     local copper = tonumber(location.copper) or 0
-    GameTooltip:AddLine(("Pockets: %d"):format(picks), 1, 1, 1)
-    GameTooltip:AddLine(("Total copper: %s"):format(ns.Coins(copper)), 1, 1, 1)
+    GameTooltip:AddLine(indent .. (MAP_PICKS .. ": %d"):format(picks), 1, 1, 1)
+    GameTooltip:AddLine(indent .. (MAP_GAINS .. ": %s"):format(ns.Coins(copper)), 1, 1, 1)
     if picks > 0 then
-        GameTooltip:AddLine(("Average per pocket: %s"):format(ns.Coins(copper / picks)), 1, 1, 1)
+        GameTooltip:AddLine(indent .. (MAP_PURSE .. ": %s"):format(ns.Coins(copper / picks)), 1, 1, 1)
     end
 
     local items = {}
@@ -65,12 +70,12 @@ local function ShowLocationTooltip(pin)
         return a.quantity > b.quantity
     end)
     if #items > 0 then
-        GameTooltip:AddLine("Possible loot:", 0.9, 0.82, 0.45)
+        GameTooltip:AddLine(indent .. MAP_ITEMS .. ":", 0.9, 0.82, 0.45)
         for index = 1, math.min(3, #items) do
             local item = items[index]
             local detail = "x" .. tostring(item.quantity)
             if item.rate then detail = detail .. (" (%.1f%%)"):format(item.rate) end
-            GameTooltip:AddDoubleLine(item.name, detail, 1, 1, 1, 0.75, 0.85, 0.75)
+            GameTooltip:AddDoubleLine(indent .. "  " .. item.name, detail, 1, 1, 1, 0.75, 0.85, 0.75)
         end
     end
     GameTooltip:Show()

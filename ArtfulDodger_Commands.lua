@@ -34,18 +34,18 @@ function Commands:ChatCommandListener(input)
         Addon:SendMessage(ns.Events.UI.Toggle)
     elseif input == L["reset"] .. " " .. L["session"] then
         Addon:SendMessage(ns.Events.Session.Reset)
-        print(Addon.prefix .. "session reset")
+        print(Addon.prefix .. "session ledger cleared")
     elseif input == L["reset"] .. " " .. L["history"] then
         Addon:SendMessage(ns.Events.History.Reset)
-        print(Addon.prefix .. "history cleared")
+        print(Addon.prefix .. "ledger wiped clean")
     elseif input == L["help"] or input == "" then
         print(L["Usage"])
         print("/" .. L["adl"] .. " " .. L["help"])
-        print("/" .. L["adl"] .. " " .. L["history"] .. " - " .. L["List all recorded statistics"])
-        print("/" .. L["adl"] .. " " .. L["session"] .. " - " .. L["List current play session statistics"])
-        print("/" .. L["adl"] .. " " .. L["toggle"] .. " - " .. L["Open or close the Addon window"])
-        print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["session"] .. " - " .. L["Clear data from current play session"])
-        print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["history"] .. " - " .. L["Clear all data"])
+        print("/" .. L["adl"] .. " " .. L["history"] .. " - " .. L["Show lifetime take and open the ledger"])
+        print("/" .. L["adl"] .. " " .. L["session"] .. " - " .. L["Recite this session's take"])
+        print("/" .. L["adl"] .. " " .. L["toggle"] .. " - " .. L["Open or close the ledger"])
+        print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["session"] .. " - " .. L["Clear this session's take"])
+        print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["history"] .. " - " .. L["Wipe the ledger's recorded history"])
     else
         print(Addon.prefix .. "unknown command: " .. input .. "   (/adl help)")
     end

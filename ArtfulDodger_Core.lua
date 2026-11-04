@@ -30,6 +30,17 @@ local Events = {
 }
 ns.Events = Events
 
+ns.Voice = {
+    lifted = "pockets lifted",
+    gains = "ill-gotten gains",
+    purse = "typical purse",
+    knownMark = "Known mark",
+    likelyMark = "Likely mark",
+    noPockets = "No pockets",
+    emptied = "Lifted",
+    possibleTake = "Possible take",
+}
+
 local bus = {}
 
 function Addon:RegisterMessage(msg, target, method)
@@ -126,7 +137,7 @@ for _, name in ipairs({
 end
 
 --========== database ==========
-local DB_VERSION = 3
+local DB_VERSION = 4
 
 local function NewDB()
     return {
@@ -140,7 +151,7 @@ local function NewDB()
             targetBadgeIconSize = 16, targetBadgePadding = -20,
             nameplateBadgeIconSize = 16, nameplateBadgePadding = -5,
         },
-        totals   = { casts = 0, picks = 0, already = 0, barren = 0, copper = 0 },
+        totals   = { casts = 0, picks = 0, already = 0, pocketless = 0, copper = 0 },
         npcs     = {},   -- ["<npcID>:<difficulty>"] = row
         locations = {},  -- [mapID][zone][subzone] = aggregate
         items    = {},   -- [itemID] = aggregate
@@ -157,7 +168,7 @@ function Addon:Row(npcID, diff)
     local row = self.db.npcs[k]
     if not row then
         row = { npc = npcID, diff = diff or 0, picks = 0, already = 0,
-            barren = false, pickpocketable = false, copper = 0,
+            pocketless = false, pickpocketable = false, copper = 0,
             items = {}, first = time(), last = 0 }
         self.db.npcs[k] = row
     end
@@ -167,7 +178,7 @@ end
 function Addon:HasPockets(npcID, diff)
     local row = self.db.npcs[NpcKey(npcID, diff or Difficulty())]
     if row and row.pickpocketable then return true end
-    return not (row and row.barren)
+    return not (row and row.pocketless)
 end
 
 Addon.POCKET_REFRESH_SECONDS = 7 * 60
@@ -203,7 +214,7 @@ function Addon:GetSpawnState(guid)
     if s and s.state then return s.state end
     local npc = NpcID(guid)
     local row = npc and self.db.npcs[NpcKey(npc, Difficulty())]
-    if row and row.barren then return "barren" end
+    if row and row.pocketless then return "pocketless" end
 end
 
 local function UnitBool(fn, ...)
@@ -246,8 +257,8 @@ function Addon:GetPickpocketState(unit, guid)
         local remaining = duration - (GetTime() - spawn.pickedAt)
         if remaining > 0 then return "cooldown", remaining, duration end
     end
-    if state == "barren" or not self:HasPockets(npc, Difficulty()) then
-        return IsHumanoidUnit(unit) and "barren" or nil
+    if state == "pocketless" or not self:HasPockets(npc, Difficulty()) then
+        return IsHumanoidUnit(unit) and "pocketless" or nil
     end
     local row = self.db.npcs[NpcKey(npc, Difficulty())]
     local knownPickpocketable = row and row.pickpocketable
@@ -294,6 +305,20 @@ function Addon:Initialize()
         ArtfulDodgerDB.containers = {}
     end
     if type(ArtfulDodgerDB) == "table" and ArtfulDodgerDB.version == 2 then
+        ArtfulDodgerDB.version = 3
+    end
+    if type(ArtfulDodgerDB) == "table" and ArtfulDodgerDB.version == 3 then
+        local totals = ArtfulDodgerDB.totals
+        if type(totals) == "table" then
+            totals.pocketless = tonumber(totals.pocketless) or tonumber(totals.barren) or 0
+            totals.barren = nil
+        end
+        for _, row in pairs(ArtfulDodgerDB.npcs or {}) do
+            if type(row) == "table" then
+                if row.pocketless == nil then row.pocketless = row.barren end
+                row.barren = nil
+            end
+        end
         ArtfulDodgerDB.version = DB_VERSION
     end
     if type(ArtfulDodgerDB) ~= "table" or ArtfulDodgerDB.version ~= DB_VERSION then
@@ -422,7 +447,7 @@ function Addon:Initialize()
     -- pocket availability is learned per build and may change with patches
     if self.db.build ~= ClientCompatibility.buildNumber then
         for _, row in pairs(self.db.npcs) do
-            row.barren = false
+            row.pocketless = false
             row.pickpocketable = false
         end
         self.db.build = ClientCompatibility.buildNumber
@@ -676,11 +701,11 @@ function Addon:UI_ERROR_MESSAGE(errType, message)
         local npc = g and NpcID(g)
         if npc then
             local row = self:Row(npc, Difficulty())
-            if row and not row.pickpocketable and not row.barren then
-                row.barren = true; row.last = time()
-                self.db.totals.barren = self.db.totals.barren + 1
+            if row and not row.pickpocketable and not row.pocketless then
+                row.pocketless = true; row.last = time()
+                self.db.totals.pocketless = self.db.totals.pocketless + 1
             end
-            SetSpawn(g, "barren", npc, Difficulty())
+            SetSpawn(g, "pocketless", npc, Difficulty())
         end
         local rec = self.pending or {}
         local mapID, zone, subzone = rec.mapID, rec.zone, rec.subzone
@@ -779,7 +804,7 @@ function Addon:RecordPick(rec)
     if row then
         row.name   = row.name or rec.name
         row.pickpocketable = true
-        row.barren = false
+        row.pocketless = false
         row.picks  = row.picks + 1
         row.copper = row.copper + (rec.copper or 0)
         row.last   = time()

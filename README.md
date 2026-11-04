@@ -1,6 +1,6 @@
 # The Artful Dodger's Ledger
 
-The Artful Dodger's Ledger is a World of Warcraft addon for Rogues. It tracks pickpocketing and lockbox loot, then organizes the results into in-game reports and tables.
+The Artful Dodger's Ledger is a World of Warcraft addon for Rogues. It keeps an account of pilfered goods, then organizes the take into in-game reports and tables with a bit of the rogue's own voice.
 
 ## Features
 
@@ -10,10 +10,13 @@ The Artful Dodger's Ledger is a World of Warcraft addon for Rogues. It tracks pi
 - Displays pickpocket statistics on the world map.
 - Tracks lockbox and junkbox openings and provides an optional movable opener button.
 - Keeps persistent history and a separate summary for the current play session.
+- Builds a heist chronicle in the report from lifetime records and current-session totals, including the most profitable marks, busiest haunts, and common finds when available.
 
 ## Install
 
 Download the ZIP from a release and extract it into the Retail AddOns directory:
+Download the ZIP from a release and extract it into the AddOns directory for your WoW client, for example:
+The addon only activates for Rogue characters. Supported client versions are listed in the TOC.
 
 ```text
 World of Warcraft/_retail_/Interface/AddOns/

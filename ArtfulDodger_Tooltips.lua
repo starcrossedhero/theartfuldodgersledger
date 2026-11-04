@@ -4,11 +4,14 @@ if not Addon then return end
 
 local Readable = ns.Readable
 
-local TIP_EMPTY   = "Pockets: Empty"
-local TIP_YES     = "Pockets: Yes"
-local TIP_LIKELY  = "Pockets: Likely"
-local TIP_NO      = "Pockets: No"
-local TIP_REFRESH = "Pockets: Empty (estimated refresh in %s)"
+local TIP_ROBBED  = "Robbed"
+local TIP_YES     = "Known Mark"
+local TIP_LIKELY  = "Likely Mark"
+local TIP_NO      = "No Pockets"
+local TIP_REFRESH = "Robbed (payday in %s)"
+local TIP_PICKS   = "Pockets Lifted"
+local TIP_PURSE   = "Typical Purse"
+local TIP_ITEMS   = "Possible Take"
 
 local function FormatRemaining(seconds)
     seconds = math.max(0, math.ceil(seconds))
@@ -66,8 +69,8 @@ local function OnUnitTooltip(tooltip, data)
         if state == "cooldown" then
             pocketStatus = TIP_REFRESH:format(FormatRemaining(remaining))
         elseif state == "robbed" then
-            pocketStatus = TIP_EMPTY
-        elseif state == "barren" then
+            pocketStatus = TIP_ROBBED
+        elseif state == "pocketless" then
             pocketStatus = TIP_NO
         elseif knownTarget or (type(row) == "table" and row.pickpocketable) then
             pocketStatus = TIP_YES
@@ -112,14 +115,14 @@ local function OnUnitTooltip(tooltip, data)
     local showItems = #drops > 0
     local indent = statusShown and "  " or ""
     if showAverage or showItems then
-        tooltip:AddLine(indent .. ("Total: %d Pockets"):format(picks), 0.9, 0.82, 0.45)
+        tooltip:AddLine(indent .. ("%s: %d"):format(TIP_PICKS, picks), 0.9, 0.82, 0.45)
     end
     if showAverage then
-        tooltip:AddLine(indent .. ("Average: %s")
-            :format(ns.Coins((tonumber(row.copper) or 0) / picks)), 0.9, 0.82, 0.45)
+        tooltip:AddLine(indent .. ("%s: %s")
+            :format(TIP_PURSE, ns.Coins((tonumber(row.copper) or 0) / picks)), 0.9, 0.82, 0.45)
     end
     if showItems then
-        tooltip:AddLine(indent .. "Items:", 0.9, 0.82, 0.45)
+        tooltip:AddLine(indent .. TIP_ITEMS .. ":", 0.9, 0.82, 0.45)
         for _, drop in ipairs(drops) do
             local rate = ("%.1f%%%s"):format(drop.rate,
                 row.itemRatesApproximate and " (estimated)" or "")

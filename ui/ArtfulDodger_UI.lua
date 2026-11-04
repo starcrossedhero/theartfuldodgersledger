@@ -151,62 +151,60 @@ local COLUMNS = {
     history = {
                 { key = "time", label = "Time", width = 90, ascending = false,
           format = function(v) return type(v) == "number" and date("%m/%d %H:%M", v) or "" end },
-                { key = "name", label = "Creature", width = 160 },
-                { key = "zone", label = "Zone", width = 130 },
-                { key = "subzone", label = "Subzone", width = 165 },
-                { key = "outcome", label = "Outcome", width = 90 },
+                { key = "name", label = "Mark", width = 160 },
+                { key = "zone", label = "Haunt", width = 130 },
+                { key = "subzone", label = "Spot", width = 165 },
+                { key = "outcome", label = "Job", width = 90 },
                 { key = "items", label = "Qty", width = 60, ascending = false },
-                { key = "copper", label = "Copper", width = 120, ascending = false,
+                { key = "copper", label = "Gains", width = 120, ascending = false,
           format = function(v) return ns.Coins(v or 0) end },
     },
     creatures = {
-                    { key = "name", label = "Creature", width = 150 },
+                    { key = "name", label = "Mark", width = 150 },
                     { key = "diff", label = "Diff", width = 65, ascending = true },
-                    { key = "picks", label = "Picks", width = 55, ascending = false },
-                    { key = "copper", label = "Total copper", width = 90, ascending = false,
+                    { key = "picks", label = "Lifts", width = 55, ascending = false },
+                    { key = "copper", label = "Gains", width = 90, ascending = false,
           format = function(v) return ns.Coins(v or 0) end },
-                    { key = "avgCopper", label = "Avg/pocket", width = 90, ascending = false,
+                    { key = "avgCopper", label = "Avg Purse", width = 90, ascending = false,
                 format = function(v) return ns.Coins(v or 0) end },
                     { key = "quantity", label = "Items", width = 55, ascending = false },
-                    { key = "loot", label = "Possible loot", width = 300 },
+                    { key = "loot", label = "Possible Take", width = 300 },
     },
     locations = {
                     { key = "mapID", label = "Map", width = 55, ascending = true },
-                    { key = "zone", label = "Zone", width = 120 },
-                    { key = "subzone", label = "Subzone", width = 120 },
-                    { key = "picks", label = "Picks", width = 55, ascending = false },
-                    { key = "copper", label = "Total copper", width = 90, ascending = false,
+                    { key = "zone", label = "Haunt", width = 120 },
+                    { key = "subzone", label = "Spot", width = 120 },
+                    { key = "picks", label = "Lifts", width = 55, ascending = false },
+                    { key = "copper", label = "Gains", width = 90, ascending = false,
           format = function(v) return ns.Coins(v or 0) end },
-                    { key = "avgCopper", label = "Avg/pocket", width = 90, ascending = false,
+                    { key = "avgCopper", label = "Avg Purse", width = 90, ascending = false,
                 format = function(v) return ns.Coins(v or 0) end },
                     { key = "quantity", label = "Items", width = 55, ascending = false },
-                    { key = "loot", label = "Possible loot", width = 250 },
+                    { key = "loot", label = "Possible Take", width = 250 },
         },
         items = {
             { key = "loot", label = "", width = 32 },
-                { key = "name", label = "Item", width = 260 },
-                { key = "id", label = "Item ID", width = 90, ascending = true },
+                { key = "name", label = "Find", width = 260 },
                 { key = "count", label = "Quantity", width = 110, ascending = false },
-                { key = "picks", label = "Pockets", width = 110, ascending = false,
+                { key = "picks", label = "Lifts", width = 110, ascending = false,
                     format = function(v) return type(v) == "number" and v >= 0 and tostring(v) or "--" end },
-                { key = "dropRate", label = "Drop %", width = 85, ascending = false,
+                { key = "dropRate", label = "Take %", width = 85, ascending = false,
                     format = function(v, row)
                         if type(v) ~= "number" then return "--" end
                         return ("%.1f%%"):format(v)
                     end },
-                { key = "last", label = "Last seen", width = 140, ascending = false,
+                { key = "last", label = "Last Lift", width = 140, ascending = false,
                     format = function(v) return type(v) == "number" and v > 0 and date("%m/%d %H:%M", v) or "" end },
     },
         containers = {
-                { key = "name", label = "Lockbox", width = 180 },
-                { key = "id", label = "Item ID", width = 70, ascending = true },
-                { key = "openings", label = "Opened", width = 70, ascending = false },
-                { key = "copper", label = "Total copper", width = 100, ascending = false,
+                { key = "name", label = "Box", width = 180 },
+                { key = "openings", label = "Cracked", width = 70, ascending = false },
+                { key = "copper", label = "Gains", width = 100, ascending = false,
                     format = function(v) return ns.Coins(v or 0) end },
-                { key = "avgCopper", label = "Avg/lockbox", width = 100, ascending = false,
+                { key = "avgCopper", label = "Avg Box", width = 100, ascending = false,
                     format = function(v) return ns.Coins(v or 0) end },
                 { key = "quantity", label = "Items", width = 55, ascending = false },
-                { key = "loot", label = "Possible loot", width = 260 },
+                { key = "loot", label = "Possible Take", width = 260 },
         },
 }
 
@@ -243,7 +241,7 @@ local function GetRows(view)
         end
     elseif view == "creatures" then
         for _, entry in pairs(db.npcs or {}) do
-            if not entry.barren then
+            if not entry.pocketless then
                 rows[#rows + 1] = {
                     name = entry.name or tostring(entry.npc or "?"),
                     diff = entry.diff or 0,
@@ -381,12 +379,12 @@ function UI:Create()
 
     f.tabs = {}
     local tabSpecs = {
-        { id = "history", text = "History", width = 88 },
-        { id = "creatures", text = "Creatures", width = 96 },
-        { id = "locations", text = "Locations", width = 96 },
-        { id = "items", text = "Items", width = 76 },
+        { id = "history", text = "The Take", width = 88 },
+        { id = "creatures", text = "Marks", width = 96 },
+        { id = "locations", text = "Haunts", width = 96 },
+        { id = "items", text = "Goods", width = 76 },
         { id = "containers", text = "Lockboxes", width = 102 },
-        { id = "report", text = "Report", width = 78 },
+        { id = "report", text = "Chronicle", width = 78 },
     }
     local tabX = 14
     for _, spec in ipairs(tabSpecs) do
@@ -467,6 +465,12 @@ function UI:Create()
         if not f.diagnosticText then print(Addon.prefix .. "selected - press Ctrl+C") end
     end)
 
+    f.reportInfo = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    f.reportInfo:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 14, 16)
+    f.reportInfo:SetPoint("RIGHT", copy, "LEFT", -10, 0)
+    f.reportInfo:SetJustifyH("LEFT")
+    f.reportInfo:SetWordWrap(false)
+
     return f
 end
 
@@ -479,6 +483,7 @@ function UI:Refresh()
     frame.summary:SetText(ns.Stats:GetPrettyPrintTotalLootedString()
         .. "    " .. ns.Stats:GetPrettyPrintSessionLootedString())
     if activeView == "report" then
+        frame.reportInfo:SetText(ns.Stats:GetReportMetadata())
         frame.editBox:SetText(table.concat(ns.Stats:BuildReport(), "\n"))
         frame.editBox:SetCursorPosition(0)
     else
@@ -497,11 +502,13 @@ function UI:SetView(view)
         frame.scroll:Hide()
         frame.reportScroll:Show()
         frame.tableSummary:Hide()
+        frame.reportInfo:Show()
     else
         frame.header:Show()
         frame.scroll:Show()
         frame.reportScroll:Hide()
         frame.tableSummary:Show()
+        frame.reportInfo:Hide()
     end
     for id, buttons in pairs(frame.headerButtons) do
         local columns = COLUMNS[id]
@@ -528,6 +535,7 @@ function UI:ShowText(text)
     self:SetView("report")
     frame.diagnosticText = true
     frame.copyButton:SetText("Select Text")
+    frame.reportInfo:Hide()
     frame.editBox:SetText(text)
     frame.editBox:SetCursorPosition(0)
     frame:Show()
@@ -560,31 +568,31 @@ function UI:RefreshTable()
     end
     local averageCopper = totalPicks > 0 and totalCopper / totalPicks or 0
     if activeView == "creatures" or activeView == "locations" then
-        frame.tableSummary:SetText(("Totals: %d pockets  |  %d items  |  %s copper  |  %s average/pocket  |  item rates from %d pockets%s")
+        frame.tableSummary:SetText(("Ledger: %d lifts  |  %d items  |  %s gains  |  %s purse/lift  |  rates from %d picks%s")
             :format(totalPicks, totalItems, ns.Coins(totalCopper), ns.Coins(averageCopper),
                 samplePicks, approximateRates and " (estimated)" or ""))
     elseif activeView == "containers" then
         local openings = 0
         for _, data in ipairs(rows) do openings = openings + (data.openings or 0) end
-        frame.tableSummary:SetText(("Totals: %d lockboxes opened  |  %d items  |  %s copper")
+        frame.tableSummary:SetText(("Lockboxes cracked: %d  |  %d items  |  %s copper")
             :format(openings, totalItems, ns.Coins(totalCopper)))
     elseif activeView == "items" then
         local hasApproximateRates = false
         for _, item in pairs(Addon.db.items or {}) do
             if item.dropRateApproximate then hasApproximateRates = true; break end
         end
-        frame.tableSummary:SetText(("Item drop sample: %d successful pockets%s")
+        frame.tableSummary:SetText(("Item sample: %d pocket lifts%s")
             :format(Addon.db.itemSamplePicks or 0,
                 hasApproximateRates and " (legacy rates estimated)" or ""))
     else
-        frame.tableSummary:SetText("Recent attempts, including known no-pocket failures")
+        frame.tableSummary:SetText("Recent jobs, including attempts with no take")
     end
     if activeView == "creatures" then
-        frame.empty:SetText("No successful pickpockets recorded")
+        frame.empty:SetText("No pockets lifted from these marks yet")
     elseif activeView == "items" then
-        frame.empty:SetText("No items recorded")
+        frame.empty:SetText("No goods recorded yet")
     elseif activeView == "containers" then
-        frame.empty:SetText("No lockboxes opened yet")
+        frame.empty:SetText("No lockboxes cracked yet")
     else
         frame.empty:SetText("Nothing recorded yet")
     end
