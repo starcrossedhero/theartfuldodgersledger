@@ -32,6 +32,8 @@ The extracted folder should be named `TheArtfulDodgersLedger` and contain `TheAr
 | `/adl history` | Print lifetime totals and open the addon window. |
 | `/adl session` | Print current-session totals. |
 | `/adl toggle` | Open or close the addon window. |
+| `/adl debug` | Toggle debug logging; use `/adl debug on` or `/adl debug off` to set it explicitly. |
+| `/adl inspect on` | Open a scrollable capture window and record every hovered unit. Use `/adl inspect off` or **Exit Inspect** to stop. |
 | `/adl reset session` | Reset current-session statistics. |
 | `/adl reset history` | Clear all recorded history and reset the session. |
 

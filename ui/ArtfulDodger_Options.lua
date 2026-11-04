@@ -146,33 +146,51 @@ function Options:Init()
     local panel = CreateFrame("Frame")
     panel.name = "The Artful Dodger's Ledger"
 
-    CreateLabel(panel, panel.name, "GameFontNormalLarge",
-        "TOPLEFT", panel, "TOPLEFT", 24, -24)
-    CreateLabel(panel, "Display", "GameFontNormal",
-        "TOPLEFT", panel, "TOPLEFT", 28, -64)
+    local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+    scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -26, 0)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetPoint("TOPLEFT", scroll, "TOPLEFT", 0, 0)
+    content:SetSize(1, 690)
+    scroll:SetScrollChild(content)
+    local function ResizeContent(self)
+        content:SetWidth(math.max(1, self:GetWidth()))
+    end
+    scroll:SetScript("OnSizeChanged", ResizeContent)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta)
+        local position = self:GetVerticalScroll() - delta * 40
+        self:SetVerticalScroll(math.max(0, math.min(self:GetVerticalScrollRange(), position)))
+    end)
+    ResizeContent(scroll)
 
-    local tooltipCheckbox = CreateCheckbox(panel, "Show pickpocket status in unit tooltips", "tooltip", -86)
-    local targetBadgeCheckbox = CreateCheckbox(panel, "Show target-frame badge", "targetBadge", -116)
-    local targetPosition = CreateDropdown(panel, "Target badge position", "targetBadgePosition", DIRECTIONS, -146)
-    local targetIconSize = CreateSlider(panel, "ADLTargetBadgeIconSizeSlider", "targetBadgeIconSize", "Target badge icon size", 8, 32, -188)
-    local targetPadding = CreateSlider(panel, "ADLTargetBadgePaddingSlider", "targetBadgePadding", "Target badge spacing", -32, 32, -232)
-    local nameplateBadgeCheckbox = CreateCheckbox(panel, "Show nameplate badges", "nameplateBadge", -280)
-    local nameplatePosition = CreateDropdown(panel, "Nameplate badge position", "nameplateBadgePosition", DIRECTIONS, -310)
-    local nameplateIconSize = CreateSlider(panel, "ADLNameplateBadgeIconSizeSlider", "nameplateBadgeIconSize", "Nameplate badge icon size", 8, 32, -352)
-    local nameplatePadding = CreateSlider(panel, "ADLNameplateBadgePaddingSlider", "nameplateBadgePadding", "Nameplate badge spacing", -32, 32, -396)
-    local copperCheckbox = CreateCheckbox(panel, "Show average pickpocket copper in unit tooltips", "tooltipCopper", -446)
-    local itemsCheckbox = CreateCheckbox(panel, "Show possible pickpocket items and drop rates", "tooltipItems", -476)
-    local mapCheckbox = CreateCheckbox(panel, "Show pickpocket details on the world map", "worldMap", -506)
-    CreateLabel(panel, "Utilities", "GameFontNormal",
-        "TOPLEFT", panel, "TOPLEFT", 28, -554)
-    local openerCheckbox = CreateCheckbox(panel, "Show lockbox and junkbox opener", "lockboxOpener", -574)
+    CreateLabel(content, panel.name, "GameFontNormalLarge",
+        "TOPLEFT", content, "TOPLEFT", 24, -24)
+    CreateLabel(content, "Display", "GameFontNormal",
+        "TOPLEFT", content, "TOPLEFT", 28, -64)
 
-    CreateLabel(panel, "Data", "GameFontNormal",
-        "TOPLEFT", panel, "TOPLEFT", 28, -620)
-    CreateButton(panel, "Reset Session", 28, -640, function()
+    local tooltipCheckbox = CreateCheckbox(content, "Show pickpocket status in unit tooltips", "tooltip", -86)
+    local targetBadgeCheckbox = CreateCheckbox(content, "Show target-frame badge", "targetBadge", -116)
+    local targetPosition = CreateDropdown(content, "Target badge position", "targetBadgePosition", DIRECTIONS, -146)
+    local targetIconSize = CreateSlider(content, "ADLTargetBadgeIconSizeSlider", "targetBadgeIconSize", "Target badge icon size", 8, 32, -188)
+    local targetPadding = CreateSlider(content, "ADLTargetBadgePaddingSlider", "targetBadgePadding", "Target badge spacing", -32, 32, -232)
+    local nameplateBadgeCheckbox = CreateCheckbox(content, "Show nameplate badges", "nameplateBadge", -280)
+    local nameplatePosition = CreateDropdown(content, "Nameplate badge position", "nameplateBadgePosition", DIRECTIONS, -310)
+    local nameplateIconSize = CreateSlider(content, "ADLNameplateBadgeIconSizeSlider", "nameplateBadgeIconSize", "Nameplate badge icon size", 8, 32, -352)
+    local nameplatePadding = CreateSlider(content, "ADLNameplateBadgePaddingSlider", "nameplateBadgePadding", "Nameplate badge spacing", -32, 32, -396)
+    local copperCheckbox = CreateCheckbox(content, "Show average pickpocket copper in unit tooltips", "tooltipCopper", -446)
+    local itemsCheckbox = CreateCheckbox(content, "Show possible pickpocket items and drop rates", "tooltipItems", -476)
+    local mapCheckbox = CreateCheckbox(content, "Show pickpocket details on the world map", "worldMap", -506)
+    CreateLabel(content, "Utilities", "GameFontNormal",
+        "TOPLEFT", content, "TOPLEFT", 28, -554)
+    local openerCheckbox = CreateCheckbox(content, "Show lockbox and junkbox opener", "lockboxOpener", -574)
+
+    CreateLabel(content, "Data", "GameFontNormal",
+        "TOPLEFT", content, "TOPLEFT", 28, -620)
+    CreateButton(content, "Reset Session", 28, -640, function()
         StaticPopup_Show(SESSION_RESET)
     end)
-    CreateButton(panel, "Clear History", 230, -640, function()
+    CreateButton(content, "Clear History", 230, -640, function()
         StaticPopup_Show(HISTORY_RESET)
     end)
 

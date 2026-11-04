@@ -21,9 +21,13 @@ end
 local function GuidFromTooltip(tooltip, data)
     if tooltip and type(tooltip.GetUnit) == "function" then
         local ok, _, unit = pcall(tooltip.GetUnit, tooltip)
-        if ok and unit and type(UnitGUID) == "function" then
-            local fine, guid = pcall(UnitGUID, unit)
-            if fine and Readable(guid) then return guid, unit end
+        if ok and unit then
+            local guid
+            if type(UnitGUID) == "function" then
+                local fine, value = pcall(UnitGUID, unit)
+                if fine and Readable(value) then guid = value end
+            end
+            return guid, unit
         end
     end
     if type(data) == "table" then
@@ -36,20 +40,8 @@ local function OnUnitTooltip(tooltip, data)
     local db = Addon.db
     local guid, unit = GuidFromTooltip(tooltip, data)
 
-    if Addon.tipProbe then
-        Addon.tipCount = (Addon.tipCount or 0) + 1
-        if Addon.tipCount <= 8 then
-            local state
-            if guid and type(Addon.GetPickpocketState) == "function" then
-                local ok, value = pcall(Addon.GetPickpocketState, Addon, unit, guid)
-                if ok then state = value end
-            end
-            Addon:Print("[tip" .. Addon.tipCount .. "]",
-                "guid=" .. tostring(guid),
-                "state=" .. tostring(state),
-                "setting=" .. tostring(db and db.settings and db.settings.tooltip),
-                "main=" .. tostring(tooltip == GameTooltip))
-        end
+    if Addon.inspectEnabled and unit and ns.Commands then
+        ns.Commands:InspectUnit(unit, tooltip, data)
     end
 
     if not db or not db.settings then return end
@@ -161,6 +153,6 @@ local tooltipLoader = CreateFrame("Frame")
 tooltipLoader:RegisterEvent("PLAYER_LOGIN")
 tooltipLoader:SetScript("OnEvent", function()
     Addon.tooltipHooked = InstallTooltipHook()
-    Addon:Print("tooltip hook " ..
+    Addon:Debug("tooltip hook " ..
         (Addon.tooltipHooked and "installed" or "|cffff2020UNAVAILABLE|r"))
 end)

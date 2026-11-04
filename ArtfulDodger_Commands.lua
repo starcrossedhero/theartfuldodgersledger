@@ -32,6 +32,19 @@ function Commands:ChatCommandListener(input)
         print(ns.Stats:GetPrettyPrintSessionLootedString())
     elseif input == L["toggle"] then
         Addon:SendMessage(ns.Events.UI.Toggle)
+    elseif input == "inspect" or input == "inspect on" or input == "inspect off" then
+        if input == "inspect off" or (input == "inspect" and Addon.inspectEnabled) then
+            Addon:StopInspect()
+        else
+            Addon:StartInspect()
+        end
+    elseif input == "debug" or input == "debug on" or input == "debug off" then
+        local enabled
+        if input == "debug on" then enabled = true
+        elseif input == "debug off" then enabled = false
+        else enabled = not Addon.db.settings.debug end
+        Addon.db.settings.debug = enabled
+        Addon:Print("debug logging " .. (enabled and "enabled" or "disabled"))
     elseif input == L["reset"] .. " " .. L["session"] then
         Addon:SendMessage(ns.Events.Session.Reset)
         print(Addon.prefix .. "session ledger cleared")
@@ -44,6 +57,8 @@ function Commands:ChatCommandListener(input)
         print("/" .. L["adl"] .. " " .. L["history"] .. " - " .. L["Show lifetime take and open the ledger"])
         print("/" .. L["adl"] .. " " .. L["session"] .. " - " .. L["Recite this session's take"])
         print("/" .. L["adl"] .. " " .. L["toggle"] .. " - " .. L["Open or close the ledger"])
+        print("/" .. L["adl"] .. " debug [on|off] - " .. L["Enable or disable debug logging"])
+        print("/" .. L["adl"] .. " inspect on|off - " .. L["Capture hovered unit details"])
         print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["session"] .. " - " .. L["Clear this session's take"])
         print("/" .. L["adl"] .. " " .. L["reset"] .. " " .. L["history"] .. " - " .. L["Wipe the ledger's recorded history"])
     else
@@ -109,15 +124,37 @@ function Commands:ProbeListener(input)
         or "probe disarmed"))
 end
 
-function Commands:Record(token)
+function Commands:Record(token, inspect, tooltip, data)
     local st = _G.__ADLprobe
-    if not st then return end
-    if not (type(UnitExists) == "function" and UnitExists(token)) then
+    if not st then
+        st = { on = false, box = nil, count = 0, frame = nil }
+        _G.__ADLprobe = st
+    end
+    local function Safe(value)
+        local valueType = type(value)
+        if valueType == "nil" then return "nil" end
+        if type(issecretvalue) == "function" then
+            local ok, secret = pcall(issecretvalue, value)
+            if ok and secret then return "<secret " .. valueType .. ">" end
+        end
+        if valueType == "string" then return value:gsub("\n", "\\n") end
+        if valueType == "number" or valueType == "boolean" then
+            local ok, result = pcall(tostring, value)
+            return ok and result or "<unreadable " .. valueType .. ">"
+        end
+        return "<" .. valueType .. ">"
+    end
+    local function cc(fn)
+        local ok, value = pcall(fn)
+        return ok and Safe(value) or "<error: " .. Safe(value) .. ">"
+    end
+    local exists = cc(function() return UnitExists(token) end)
+    if not inspect and (type(UnitExists) ~= "function" or exists ~= "true") then
         print("[ADL] " .. token .. " is not a live unit - nothing recorded")
         return
     end
 
-    if not st.box then
+    if not inspect and not st.box then
         st.box = CreateFrame("EditBox", nil, UIParent)
         st.box:SetSize(520, 600)
         st.box:SetPoint("TOPLEFT", 40, 0)
@@ -128,22 +165,38 @@ function Commands:Record(token)
 
     local out = {}
     local function P(s) out[#out + 1] = s end
-    local function cc(fn)
-        local ok, value = pcall(fn)
-        return ok and tostring(value) or "ERR"
-    end
     local function F(label, fn)
         P(string.format("  %-13s = %s", label, cc(fn)))
     end
 
     local you = cc(function() return UnitGUID("player") end)
-    -- (removed: UnitOwner, C_PetInfo.GetPetInfo - confirmed absent in this API)
-
-    st.count = st.count + 1
-    P("")
-    P(string.format("#%d  %s  %s", st.count, date("%H:%M:%S"), token))
+    local count
+    if inspect then
+        Addon.inspectCount = (Addon.inspectCount or 0) + 1
+        count = Addon.inspectCount
+    else
+        st.count = st.count + 1
+        count = st.count
+        P("")
+    end
+    P(string.format("#%d  %s  %s", count, date("%H:%M:%S"), token))
+    if inspect then
+        F("gameTooltip", function() return tooltip == GameTooltip end)
+        F("dataType", function() return type(data) end)
+        F("dataGuid", function() return type(data) == "table" and data.guid end)
+        F("tooltipUnit", function()
+            if tooltip and type(tooltip.GetUnit) == "function" then
+                local _, unit = tooltip:GetUnit()
+                return unit
+            end
+        end)
+    end
+    P(string.format("  %-13s = %s", "exists", exists))
     F("name",       function() return UnitName(token) end)
     F("guid",       function() return UnitGUID(token) end)
+    F("level",      function() return UnitLevel(token) end)
+    F("creatureType", function() return UnitCreatureType(token) end)
+    F("isDead",     function() return UnitIsDead(token) end)
     P(string.format("  %-13s = %s", "you", you))
     F("petToken",   function() return UnitIsUnit("pet", token) end)
     F("demon",      function() return UnitIsUnit("demon", token) end)
@@ -161,7 +214,7 @@ function Commands:Record(token)
     local mine = false
     for _, relationship in ipairs({ "pet", "demon", "totem", "guardian" }) do
         local ok, value = pcall(function() return UnitIsUnit(relationship, token) end)
-        if ok and value then mine = true break end
+        if ok and Safe(value) == "true" then mine = true break end
     end
     local guid = cc(function() return UnitGUID(token) end)
     if petGuid and petGuid ~= "nil" and petGuid ~= "ERR" and guid == petGuid then mine = true end
@@ -174,9 +227,18 @@ function Commands:Record(token)
         P("  [if] = NOT MINE (other players, their pets, wild) -> cast/db path")
     end
 
-    local box = st.box
-    box:Show()
-    box:SetText(box:GetText() .. table.concat(out, "\n"))
-    box:SetFocus()
-    box:HighlightText()
+    local record = table.concat(out, "\n")
+    if inspect then
+        ns.UI:AppendInspectText(record)
+    else
+        local box = st.box
+        box:Show()
+        box:SetText(box:GetText() .. record)
+        box:SetFocus()
+        box:HighlightText()
+    end
+end
+
+function Commands:InspectUnit(token, tooltip, data)
+    if Addon.inspectEnabled then self:Record(token, true, tooltip, data) end
 end

@@ -18,6 +18,11 @@ function Addon:Print(...)
     print(self.prefix .. table.concat(p, " "))
 end
 
+function Addon:Debug(...)
+    if not (self.db and self.db.settings and self.db.settings.debug) then return end
+    self:Print("|cffffd100[debug]|r", ...)
+end
+
 --========== message bus (replaces AceEvent) ==========
 local Events = {
     UI      = { Toggle = "ADL_UI_TOGGLE" },
@@ -144,6 +149,7 @@ local function NewDB()
         version  = DB_VERSION,
         build    = ClientCompatibility.buildNumber,
         settings = {
+            debug = false,
             tooltip = true, tooltipCopper = false, tooltipItems = false, worldMap = false,
             lockboxOpener = true, lockboxOpenerPosition = { x = 0, y = 0 },
             targetBadge = true, nameplateBadge = true,
@@ -330,6 +336,7 @@ function Addon:Initialize()
     self.db = ArtfulDodgerDB
 
     self.db.settings = self.db.settings or {}
+    if self.db.settings.debug == nil then self.db.settings.debug = false end
     if self.db.settings.tooltip == nil then self.db.settings.tooltip = true end
     if self.db.settings.lockboxOpener == nil then self.db.settings.lockboxOpener = true end
     if type(self.db.settings.lockboxOpenerPosition) ~= "table" then
@@ -471,7 +478,7 @@ function Addon:Enable()
     self:RegisterEvent("UI_ERROR_MESSAGE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    self:Print(self.version, "build " .. tostring(ClientCompatibility.buildNumber),
+    self:Debug(self.version, "build " .. tostring(ClientCompatibility.buildNumber),
         "interface " .. tostring(ClientCompatibility.interfaceVersion),
         "pickpocket=" .. ClientCompatibility.pickpocketSpellID,
         "noPocketsMessage=" .. tostring(ClientCompatibility.noPocketsMessage ~= nil),
@@ -844,10 +851,9 @@ function Addon:ResolvePrice(itemID)
 end
 
 --========== diagnostics ==========
-SLASH_ADLDIAG1 = "/adldiag"
-SlashCmdList["ADLDIAG"] = function()
-    local db = Addon.db
-    if not db then Addon:Print("not initialised yet"); return end
+function Addon:StartInspect()
+    local db = self.db
+    if not db then self:Print("not initialised yet"); return end
 
     local rows, npcLootRows, locationLootRows, itemRows = 0, 0, 0, 0
     for _ in pairs(db.npcs) do rows = rows + 1 end
@@ -872,24 +878,32 @@ SlashCmdList["ADLDIAG"] = function()
         end
     end
 
-    Addon:Print("db=true",
+    local lines = {
+        "db=true",
         "tooltipSetting=" .. tostring(db.settings and db.settings.tooltip),
-        "hooked=" .. tostring(Addon.tooltipHooked),
+        "hooked=" .. tostring(self.tooltipHooked),
         "spawns=" .. #spawns, "npcRows=" .. rows,
         "npcLootRows=" .. npcLootRows, "locationLootRows=" .. locationLootRows,
-        "itemRows=" .. itemRows)
-
-    local g = UnitGUID("target")
-    Addon:Print("target=" .. tostring(UnitName("target")),
-        "npc=" .. tostring(NpcID(g)), "diff=" .. Difficulty(),
-        "state=" .. tostring(g and Addon:GetSpawnState(g)))
-
-    for i = 1, math.min(#spawns, 8) do
-        local s = spawns[i]
-        Addon:Print("spawn" .. i, s.state or "?", tostring(s.npc), (s.guid or ""):sub(-10))
+        "itemRows=" .. itemRows,
+    }
+    local guid = UnitGUID("target")
+    lines[#lines + 1] = "target=" .. tostring(UnitName("target"))
+        .. " npc=" .. tostring(NpcID(guid)) .. " diff=" .. Difficulty()
+        .. " state=" .. tostring(guid and self:GetSpawnState(guid))
+    for i = 1, #spawns do
+        local spawn = spawns[i]
+        lines[#lines + 1] = "spawn" .. i .. " " .. (spawn.state or "?")
+            .. " " .. tostring(spawn.npc) .. " " .. (spawn.guid or ""):sub(-10)
     end
 
-    Addon.tipProbe, Addon.tipCount = true, 0
-    Addon:Print("hover up to 8 units for per-hover detail")
+    self.inspectEnabled, self.inspectCount = true, 0
+    if ns.UI then ns.UI:ShowInspectText(table.concat(lines, "\n")) end
+    self:Print("inspection enabled; hover units to record (/adl inspect off or Exit Inspect to stop)")
+end
+
+function Addon:StopInspect(quiet)
+    local wasEnabled = self.inspectEnabled
+    self.inspectEnabled = false
+    if wasEnabled and not quiet then self:Print("inspection disabled") end
 end
 

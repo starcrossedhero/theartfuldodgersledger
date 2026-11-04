@@ -227,7 +227,7 @@ function Badges:Init()
     end
     Addon:RegisterMessage(ns.Events.Loot.PickRecorded, self, "OnPickRecorded")
     RefreshCurrent()
-    Addon:Print("badges ready")
+    Addon:Debug("badges ready")
 end
 
 function Badges:OnPickRecorded(rec)

@@ -10,6 +10,7 @@ end
 local UI = {}
 ns.UI = UI
 local frame
+local inspectFrame
 local activeView = "history"
 local refreshPending = false
 local refreshGeneration = 0
@@ -541,6 +542,96 @@ function UI:ShowText(text)
     frame:Show()
     frame.editBox:SetFocus()
     frame.editBox:HighlightText()
+end
+
+function UI:ShowInspectText(text)
+    if not inspectFrame then
+        local f = CreateFrame("Frame", "ADLInspectFrame", UIParent, "BackdropTemplate")
+        inspectFrame = f
+        f:SetSize(680, 520)
+        f:SetPoint("CENTER")
+        f:SetFrameStrata("DIALOG")
+        f:SetClampedToScreen(true)
+        f:SetMovable(true)
+        f:EnableMouse(true)
+        f:RegisterForDrag("LeftButton")
+        f:SetScript("OnDragStart", f.StartMoving)
+        f:SetScript("OnDragStop", f.StopMovingOrSizing)
+        f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8",
+                        edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        f:SetBackdropColor(0, 0, 0, 0.95)
+        f:SetBackdropBorderColor(1, 1, 1, 0.5)
+
+        local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOPLEFT", 14, -12)
+        title:SetText("Artful Dodger Inspect")
+        CreateFrame("Button", nil, f, "UIPanelCloseButton"):SetPoint("TOPRIGHT", -2, -2)
+
+        f.scroll = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+        f.scroll:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -38)
+        f.scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30, 44)
+        f.editBox = CreateFrame("EditBox", nil, f.scroll)
+        f.editBox:SetMultiLine(true)
+        f.editBox:SetFontObject(ChatFontNormal)
+        f.editBox:SetWidth(620)
+        f.editBox:SetAutoFocus(false)
+        f.editBox:SetMaxLetters(0)
+        f.editBox:SetTextInsets(4, 4, 4, 4)
+        f.editBox:SetScript("OnEscapePressed", function(box) box:ClearFocus() end)
+        f.scroll:SetScrollChild(f.editBox)
+
+        f.measure = f:CreateFontString(nil, "ARTWORK", "ChatFontNormal")
+        f.measure:SetWidth(620)
+        f.measure:SetWordWrap(true)
+        f.measure:SetJustifyH("LEFT")
+        f.measure:Hide()
+
+        local selectText = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+        selectText:SetSize(110, 22)
+        selectText:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -14, 12)
+        selectText:SetText("Select Text")
+        selectText:SetScript("OnClick", function()
+            f.editBox:SetFocus()
+            f.editBox:HighlightText()
+        end)
+
+        local exit = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+        exit:SetSize(110, 22)
+        exit:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 14, 12)
+        exit:SetText("Exit Inspect")
+        exit:SetScript("OnClick", function()
+            f.inspecting = false
+            Addon:StopInspect(true)
+            f:Hide()
+        end)
+        f:SetScript("OnHide", function(self)
+            if self.inspecting then
+                self.inspecting = false
+                Addon:StopInspect(true)
+            end
+        end)
+    end
+
+    inspectFrame.inspecting = true
+    self:SetInspectText(text)
+    inspectFrame.scroll:SetVerticalScroll(0)
+    inspectFrame:Show()
+end
+
+function UI:SetInspectText(text)
+    inspectFrame.editBox:SetText(text)
+    inspectFrame.measure:SetText(text)
+    inspectFrame.editBox:SetHeight(math.max(
+        inspectFrame.measure:GetStringHeight() + 8, inspectFrame.scroll:GetHeight()))
+    inspectFrame.scroll:UpdateScrollChildRect()
+end
+
+function UI:AppendInspectText(text)
+    if not inspectFrame or not inspectFrame.inspecting then return end
+    local combinedText = inspectFrame.editBox:GetText() .. "\n\n" .. text
+    self:SetInspectText(combinedText)
+    inspectFrame.scroll:SetVerticalScroll(math.max(0,
+        inspectFrame.editBox:GetHeight() - inspectFrame.scroll:GetHeight()))
 end
 
 function UI:RefreshTable()
