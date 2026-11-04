@@ -1,246 +1,132 @@
-if select(3, UnitClass("player")) ~= 4 then
-    return
-end
+local _, ns = ...
+local Addon = ns.Addon
+if not Addon then return end
 
-local Addon = LibStub("AceAddon-3.0"):GetAddon("ArtfulDodger")
-local Stats = Addon:NewModule("ArtfulDodger_Stats", "AceEvent-3.0")
-local Events = Addon.Events
-local L = Addon.Localizations
+local Stats = {}
+ns.Stats = Stats
 
-local defaults = {
-    history = {
-        start = 0,
-        duration = 0,
-        thefts = 0,
-        copper = 0
-    },
-    session = {
-        start = 0,
-        duration = 0,
-        thefts = 0,
-        copper = 0
-    },
-    junkboxes = {},
-    maps = {}
-}
+local session
 
-Stats.DefaultSession = function()
-    return Addon.ShallowCopy(defaults.session)
-end
-
-Stats.DefaultHistory = function()
-    return Addon.ShallowCopy(defaults.history)
-end
-
-function Stats:OnInitialize()
-    self.db = Addon.db.stats
-    self.db.session = self.DefaultSession()
-	self.db.session.start = time()
-    if not self.db.history then
-        self.db.history = self.DefaultHistory()
-    end
-    if not self.db.maps then
-        self.db.maps = {}
-    end
-    if not self.db.junkboxes then
-        self.db.junkboxes = {}
-    end
-	if self.db.history.start <= 0 then
-		self.db.history.start = self.db.session.start
-	end
-end
-
-function Stats:OnEnable()
-    self:RegisterMessage(Events.Loot.PickPocketComplete, "PickPocketComplete")
-    self:RegisterMessage(Events.Loot.Junkbox, "JunkboxLooted")
-    self:RegisterMessage(Events.History.Reset, "Reset")
-    self:RegisterMessage(Events.Session.Reset, "ResetSession")
-end
-
-function Stats:PickPocketComplete(message, e)
-    local copper = e:GetCopperFromLoot()
-    self:AddStats(self.db.history, copper)
-    self:AddStats(self.db.session, copper)
-    self:AddStats(self.db.maps, copper, e.mapId, e.victim.npcId, e.victim.name)
-end
-
-function Stats:JunkboxLooted(message, e)
-    local copper = e:GetCopperFromLoot()
-    self:AddStats(self.db.junkboxes, copper, e.itemId)
-end
-
-function Stats:Reset()
-	self.db.session = self.DefaultSession()
-    self.db.history = self.DefaultHistory()
-    self.db.maps = {}
-    self.db.junkboxes = {}
-
-    local time = time()
-    self.db.session.start = time
-    self.db.history.start = time
+function Stats:Init()
+    self:ResetSession()
+    Addon:RegisterMessage(ns.Events.Loot.PickRecorded, self, "OnPickRecorded")
+    Addon:RegisterMessage(ns.Events.Loot.ContainerRecorded, self, "OnContainerRecorded")
+    Addon:RegisterMessage(ns.Events.Session.Reset,    self, "ResetSession")
+    Addon:RegisterMessage(ns.Events.History.Reset,    self, "ResetHistory")
 end
 
 function Stats:ResetSession()
-	self.db.session = self.DefaultSession()
-    self.db.session.start = time()
+    session = { start = time(), picks = 0, copper = 0, items = 0, containers = 0, containerCopper = 0 }
 end
 
-function Stats:AddStats(statTable, copper, id, npcId, npcName)
-    if id then
-        if statTable[id] == nil then
-            statTable[id] = {copper = 0, thefts = 0, victims = {}}
-        end
-        statTable[id].copper = statTable[id].copper + copper
-        statTable[id].thefts = statTable[id].thefts + 1
-        if npcId and npcName then
-            if statTable[id].victims[npcId] == nil then
-                statTable[id].victims[npcId] = {name = "", copper = 0, thefts = 0}
-            end
-            statTable[id].victims[npcId].name = npcName
-            statTable[id].victims[npcId].copper = statTable[id].victims[npcId].copper + copper
-            statTable[id].victims[npcId].thefts = statTable[id].victims[npcId].thefts + 1
-        end
-    else
-        statTable.copper = statTable.copper + copper
-        statTable.thefts = statTable.thefts + 1
+function Stats:ResetHistory()
+    local db = Addon.db
+    db.totals = { casts = 0, picks = 0, already = 0, barren = 0, copper = 0 }
+    db.npcs, db.recent = {}, {}
+    db.locations = {}
+    db.items = {}
+    db.containers = {}
+    db.itemSamplePicks = 0
+    self:ResetSession()
+end
+
+function Stats:OnContainerRecorded(rec)
+    if not session then return end
+    session.containers = session.containers + 1
+    session.containerCopper = session.containerCopper + (rec.copper or 0)
+    for _, item in ipairs(rec.items or {}) do
+        session.items = session.items + (item.qty or 1)
     end
 end
 
-function Stats:GetMaps()
-    local maps = {}
-    for id, map in pairs(self.db.maps) do
-        local info = C_Map.GetMapInfo(id)
-        if info then
-            maps[id] = info.name
-        end
+function Stats:OnPickRecorded(rec)
+    if not session then return end
+    session.picks  = session.picks + 1
+    session.copper = session.copper + (rec.copper or 0)
+    for _, item in ipairs(rec.items) do
+        session.items = session.items + (item.qty or 1)
     end
-    
-    table.sort(maps, function(a,b) return a < b end)
-    
-    return maps
-end
-
-function Stats:GetVictims(mapId)
-    local victims = {}
-    local map = self.db.maps[mapId]
-
-    if map then 
-        for npcId, victim in pairs(map.victims) do
-            victims[npcId] = victim.name
-        end
-    end
-
-    table.sort(victims, function(a,b) return a < b end)
-
-    return victims
-end
-
-function Stats:GetAverageCoinByNpcId(npcId)
-    for _, map in pairs(self.db.maps) do
-        local victim = map.victims[npcId]
-        if victim then 
-            return Addon:GetCopperPerVictim(victim.copper, victim.thefts)
-        end
-    end
-    return Addon:GetCopperPerVictim(0, 0)
-end
-
-function Stats:GetStatsByMapIdAndNpcId(mapId, npcId)
-    local stats = {copper = 0, thefts = 0}
-    local map = self.db.maps[mapId]
-    if map then
-        local npc = map.victims[npcId]
-        if npc then
-            stats.copper = stats.copper + npc.copper
-            stats.thefts = stats.thefts + npc.thefts
-        end
-    end
-    return stats
-end
-
-function Stats:GetStatsForMapId(mapId, includeChildren)
-    local maps = self.db.maps
-    local stats = {copper = 0, thefts = 0}
-    if maps[mapId] then
-        stats.copper = stats.copper + maps[mapId].copper
-        stats.thefts = stats.thefts + maps[mapId].thefts
-    end
-    if includeChildren then
-        local childStats = Stats:GetStatsForChildMapsByMapId(mapId)
-        stats.copper = stats.copper + childStats.copper
-        stats.thefts = stats.thefts + childStats.thefts
-    end
-    return stats
-end
-
-function Stats:GetStatsForChildMapsByMapId(mapId)
-    local stats = {copper = 0, thefts = 0}
-    local children = C_Map.GetMapChildrenInfo(mapId, nil, true)
-    for _, childMap in ipairs(children) do
-        local childMapStats = self.db.maps[childMap.mapID]
-        if childMapStats then
-            stats.copper = stats.copper + childMapStats.copper
-            stats.thefts = stats.thefts + childMapStats.thefts
-        end
-    end
-    return stats
-end
-
-function Stats:GetStatsByJunkboxId(junkboxId)
-    local stats = {copper = 0, thefts = 0}
-    local junkbox = self.db.junkboxes[junkboxId]
-    if junkbox then
-        stats.copper = stats.copper + junkbox.copper
-        stats.thefts = stats.thefts + junkbox.thefts
-    end
-    return stats
-end
-
-function Stats:GetStatsForJunkboxes()
-    local stats = {copper = 0, thefts = 0}
-    for _, junkbox in pairs(self.db.junkboxes) do
-        stats.copper = stats.copper + junkbox.copper
-        stats.thefts = stats.thefts + junkbox.thefts
-    end
-    return stats
-end
-
-function Stats:GetSessionCopperPerHour()
-    return Addon:GetCopperPerHour(self.db.session.copper, self.db.session.duration)
-end
-
-function Stats:GetTotalCopperPerHour()
-    return Addon:GetCopperPerHour(self.db.history.copper, self.db.history.duration)
-end
-
-function Stats:GetSessionCopperPerVictim()
-	return Addon:GetCopperPerVictim(self.db.session.copper, self.db.session.thefts)
-end
-
-function Stats:GetTotalCopperPerVictim()
-	return Addon:GetCopperPerVictim(self.db.history.copper, self.db.history.thefts)
 end
 
 function Stats:GetPrettyPrintTotalLootedString()
-	return self:PrettyPrint(date("%Y/%m/%d %H:%M:%S", self.db.history.start), GetCoinTextureString(self.db.history.copper), self.db.history.thefts, GetCoinTextureString(self:GetTotalCopperPerVictim()))
+    local t = Addon.db.totals
+    local openings, copper = 0, 0
+    for _, container in pairs(Addon.db.containers or {}) do
+        openings = openings + (tonumber(container.openings) or 0)
+        copper = copper + (tonumber(container.copper) or 0)
+    end
+    return ("Total: %d pockets, %s | %d lockboxes, %s"):format(
+        t.picks, ns.Coins(t.copper), openings, ns.Coins(copper))
 end
 
 function Stats:GetPrettyPrintSessionLootedString()
-	return self:GetPrettyPrintString(date("%Y/%m/%d %H:%M:%S", self.db.session.start), L["recent"], L["purse"], GetCoinTextureString(self.db.session.copper), self.db.session.thefts, GetCoinTextureString(self:GetSessionCopperPerVictim()))
+    local mins = math.max(1, math.floor((time() - session.start) / 60))
+    local text = ("Session (%dm): %d pockets, %s, %s/hr"):format(
+        mins, session.picks, ns.Coins(session.copper),
+        ns.Coins(math.floor(session.copper / mins * 60)))
+    if session.containers > 0 then
+        text = text .. (" | %d lockboxes, %s"):format(
+            session.containers, ns.Coins(session.containerCopper))
+    end
+    return text
 end
 
-function Stats:GetPrettyPrintString(date, period, store, copper, count, average)
-	return string.format("\nSince |cffFFFFFF%s|r\n\nYour |cff334CFF%s|r pilfering has "..GREEN_FONT_COLOR_CODE.."increased|r your %s by |cffFFFFFF%s|r \nYou've "..RED_FONT_COLOR_CODE.."picked the pockets|r of |cffFFFFFF%d|r victim(s)\nYou've "..RED_FONT_COLOR_CODE.."stolen|r an average of |cffFFFFFF%s|r from each victim", date, period, store, copper, count, average)
+function Stats:GetSortedRows(field)
+    local rows = {}
+    for _, row in pairs(Addon.db.npcs) do rows[#rows + 1] = row end
+    table.sort(rows, function(a, b)
+        local av, bv = a[field] or 0, b[field] or 0
+        if av == bv then return (a.name or "") < (b.name or "") end
+        return av > bv
+    end)
+    return rows
 end
 
-function Stats:PrettyPrint(date, copper, count, average)
-    local date = string.format(L["Since"]..self:SubColors(" ^WHITE%s|r"), date)
-    local count = string.format(self:SubColors(L["You've ^REDpicked pockets|r of ^WHITE%d|r victim(s)"]), count)
-    local total = string.format(self:SubColors(L["You've ^REDpilfered|r a total of ^WHITE%s|r"]), copper)
-    local average = string.format(self:SubColors(L["You've ^REDpurloined|r an average of ^WHITE%s|r per victim"]), average)
-    return string.format("\n%s\n\n%s\n%s\n%s", date, count, total, average)
-end
+function Stats:BuildReport()
+    local db, clientCompatibility, out = Addon.db, ns.ClientCompatibility, {}
 
-function Stats:SubColors(string)
-    return string:gsub("%^RED", RED_FONT_COLOR_CODE):gsub("%^GREEN", GREEN_FONT_COLOR_CODE):gsub("%^BLUE", BLUE_FONT_COLOR_CODE):gsub("%^WHITE", WHITE_FONT_COLOR_CODE):gsub("%^GOLD", GOLD_FONT_COLOR_CODE)
+    out[#out + 1] = ("The Artful Dodger's Ledger   %s"):format(Addon.version)
+    out[#out + 1] = ("build %s   interface %s   project %s")
+        :format(tostring(clientCompatibility.buildNumber),
+            tostring(clientCompatibility.interfaceVersion),
+            tostring(clientCompatibility.projectID))
+    out[#out + 1] = ""
+
+    local t = db.totals
+    out[#out + 1] = ("casts %d   picks %d   already %d   barren %d")
+        :format(t.casts, t.picks, t.already, t.barren)
+    out[#out + 1] = ("total %s   avg %s/pick"):format(ns.Coins(t.copper),
+        ns.Coins(t.picks > 0 and math.floor(t.copper / t.picks) or 0))
+    local containerOpenings, containerCopper = 0, 0
+    for _, container in pairs(db.containers or {}) do
+        containerOpenings = containerOpenings + (tonumber(container.openings) or 0)
+        containerCopper = containerCopper + (tonumber(container.copper) or 0)
+    end
+    out[#out + 1] = ("lockboxes opened %d   lockbox copper %s")
+        :format(containerOpenings, ns.Coins(containerCopper))
+    out[#out + 1] = Stats:GetPrettyPrintSessionLootedString()
+    out[#out + 1] = ""
+
+    out[#out + 1] = ("%-26s %4s %5s %11s  %s"):format("npc", "diff", "picks", "copper", "flags")
+    out[#out + 1] = string.rep("-", 60)
+
+    local rows = Stats:GetSortedRows("copper")
+    for i = 1, math.min(#rows, 40) do
+        local r = rows[i]
+        out[#out + 1] = ("%-26s %4s %5d %11s  %s"):format(
+            (r.name or tostring(r.npc)):sub(1, 26), tostring(r.diff),
+            r.picks, ns.Coins(r.copper), r.barren and "barren" or "")
+    end
+    if #rows == 0 then out[#out + 1] = "(nothing recorded yet)" end
+
+    out[#out + 1] = ""
+    out[#out + 1] = "recent:"
+    if #db.recent == 0 then out[#out + 1] = "  (none)" end
+    for i = #db.recent, math.max(1, #db.recent - 14), -1 do
+        local e = db.recent[i]
+        out[#out + 1] = ("  %s  %-24s %10s  %d item(s)"):format(
+            date("%H:%M", e.t), (e.name or "?"):sub(1, 24),
+            ns.Coins(e.copper), e.items)
+    end
+    return out
 end

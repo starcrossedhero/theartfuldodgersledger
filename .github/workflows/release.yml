@@ -11,12 +11,15 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Create Archive Release
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: 'TheArtfulDodgersLedger.zip'
-          exclusions: '*.git*'
+      - uses: actions/checkout@v4
+      - name: Package addon
+        run: |
+          package_dir="dist/TheArtfulDodgersLedger"
+          mkdir -p "$package_dir"
+          cp ./*.lua ./*.toc "$package_dir/"
+          cp -R ui "$package_dir/"
+          cd dist
+          zip -r ../TheArtfulDodgersLedger.zip TheArtfulDodgersLedger
       - name: Upload Release
         uses: ncipollo/release-action@v1
         with:

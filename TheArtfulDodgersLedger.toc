@@ -1,33 +1,22 @@
-## Interface: 100007
+## Interface: 120105, 11509
 ## Title: The Artful Dodger's Ledger
 ## Notes: Track your accumulation of pilfered goods
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
 ## SavedVariables: ArtfulDodgerDB
-## OptionalDeps: Ace3
-## X-Embeds: Ace3
 ## Author: starcrossedhero
-## Version: v0.0.10-alpha
+## Version: v0.1.0-alpha
+## AddonCompartmentFunc: ArtfulDodger_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: ArtfulDodger_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: ArtfulDodger_OnCompartmentLeave
 
-embeds.xml
+ArtfulDodger_Containers.lua
 ArtfulDodger_Core.lua
-localization\Localizations.lua
-localization\esMX.lua
-events\ArtfulDodger_Events.lua
-events\ArtfulDodger_JunkboxEvent.lua
-events\ArtfulDodger_PickPocketEvent.lua
-ArtfulDodger_Loot.lua
+ArtfulDodger_Tooltips.lua
 ArtfulDodger_Stats.lua
-ArtfulDodger_ChatCommands.lua
-opener\ArtfulDodger_OpenerFrame.lua
-opener\ArtfulDodger_JunkboxOpener.lua
-utils\CreatureTypeExceptions.lua
-utils\CreatureTypes.lua
-utils\ArtfulDodger_Utils.lua
-ui\tables\ArtfulDodger_BaseTable.lua
-ui\tables\ArtfulDodger_PickPocketTable.lua
-ui\tables\ArtfulDodger_JunkboxTable.lua
-ui\ArtfulDodger_Map.lua
-ui\ArtfulDodger_Pins.lua
 ui\ArtfulDodger_UI.lua
-ui\ArtfulDodger_MiniMap.lua
-ui\ArtfulDodger_Tooltip.lua
-ui\ArtfulDodger_UnitFrame.lua
+ui\ArtfulDodger_Map.lua
+ui\ArtfulDodger_Map.xml
+ArtfulDodger_Commands.lua
+ui\ArtfulDodger_Badges.lua
+ui\ArtfulDodger_Opener.lua
+ui\ArtfulDodger_Options.lua
