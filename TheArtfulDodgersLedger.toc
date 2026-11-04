@@ -4,7 +4,7 @@
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
 ## SavedVariables: ArtfulDodgerDB
 ## Author: starcrossedhero
-## Version: v0.1.0-alpha
+## Version: v1.0.0
 ## AddonCompartmentFunc: ArtfulDodger_OnCompartmentClick
 ## AddonCompartmentFuncOnEnter: ArtfulDodger_OnCompartmentEnter
 ## AddonCompartmentFuncOnLeave: ArtfulDodger_OnCompartmentLeave
