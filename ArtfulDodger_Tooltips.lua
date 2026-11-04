@@ -128,6 +128,18 @@ local function OnUnitTooltip(tooltip, data)
     end
 end
 
+local function FormatHookError(message)
+    local ok, text = pcall(tostring, message)
+    if not ok or not Readable(text) then text = "<unreadable error>" end
+
+    local trace = ""
+    if type(debug) == "table" and type(debug.traceback) == "function" then
+        local fine, result = pcall(debug.traceback, "", 2)
+        if fine and Readable(result) then trace = result end
+    end
+    return text .. trace
+end
+
 local function InstallTooltipHook()
     if not (TooltipDataProcessor and Enum and Enum.TooltipDataType) then return false end
 
@@ -136,9 +148,7 @@ local function InstallTooltipHook()
         function(tooltip, data)
             local fine, errorMessage = xpcall(
                 function() OnUnitTooltip(tooltip, data) end,
-                function(message)
-                    return tostring(message) .. "\n" .. tostring(debug.traceback("", 2))
-                end)
+                    FormatHookError)
             if not fine and not Addon.tipErrored then
                 Addon.tipErrored = true
                 Addon:Print("|cffff2020tooltip hook error|r\n" .. tostring(errorMessage))

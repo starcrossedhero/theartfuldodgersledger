@@ -237,14 +237,23 @@ local function IsNPCUnit(unit)
         and UnitBool(UnitPlayerControlled, unit) == false
 end
 
-local function IsHumanoidUnit(unit)
+local function IsPickpocketCandidate(unit)
     if not IsNPCUnit(unit) or type(UnitCreatureType) ~= "function" then
         return false
     end
 
     local ok, _, creatureTypeID = pcall(UnitCreatureType, unit)
-    return ok and ReadableNum(creatureTypeID) and creatureTypeID == 7
+    return ok and ReadableNum(creatureTypeID)
+        and (creatureTypeID == 6 or creatureTypeID == 7)
 end
+
+local function UnitNameIfReadable(unit)
+    if type(UnitName) ~= "function" then return nil end
+    local ok, name = pcall(UnitName, unit)
+    if ok and Readable(name) and name ~= "" then return name end
+end
+
+local ANONYMOUS_CITIZEN = "Anonymous Citizen"
 
 function Addon:GetPickpocketState(unit, guid)
     if not Readable(guid) and type(unit) == "string" and type(UnitGUID) == "function" then
@@ -264,7 +273,7 @@ function Addon:GetPickpocketState(unit, guid)
         if remaining > 0 then return "cooldown", remaining, duration end
     end
     if state == "pocketless" or not self:HasPockets(npc, Difficulty()) then
-        return IsHumanoidUnit(unit) and "pocketless" or nil
+        return IsPickpocketCandidate(unit) and "pocketless" or nil
     end
     local row = self.db.npcs[NpcKey(npc, Difficulty())]
     local knownPickpocketable = row and row.pickpocketable
@@ -272,7 +281,7 @@ function Addon:GetPickpocketState(unit, guid)
     if not IsNPCUnit(unit)
         or UnitBool(UnitIsDeadOrGhost, unit) ~= false
         or UnitBool(UnitCanAttack, "player", unit) ~= true
-        or (not knownPickpocketable and not IsHumanoidUnit(unit)) then
+        or (not knownPickpocketable and not IsPickpocketCandidate(unit)) then
         return nil
     end
     return "likely", nil, nil, knownPickpocketable == true
@@ -494,6 +503,15 @@ local function LocationText(fn)
     if ok and Readable(value) and value ~= "" then return value end
 end
 
+local function InstanceName()
+    if type(GetInstanceInfo) ~= "function" then return nil end
+    local ok, name, instanceType = pcall(GetInstanceInfo)
+    if ok and Readable(name) and name ~= "" and Readable(instanceType)
+        and (instanceType == "party" or instanceType == "raid") then
+        return name
+    end
+end
+
 local function PlayerLocation()
     local mapID
     if type(ClientCompatibility.getBestMapForUnit) == "function" then
@@ -503,6 +521,12 @@ local function PlayerLocation()
 
     local zone = LocationText(GetRealZoneText) or LocationText(GetZoneText)
     local subzone = LocationText(GetSubZoneText)
+    local instanceName = InstanceName()
+    if instanceName then
+        if subzone == zone then subzone = nil end
+        zone = instanceName
+    end
+
     local mapX, mapY
     if mapID and type(ClientCompatibility.getPlayerMapPosition) == "function" then
         local ok, position = pcall(ClientCompatibility.getPlayerMapPosition, mapID, "player")
@@ -531,10 +555,10 @@ function Addon:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID)
     if not Readable(guid) then guid = nil end
     if guid then self.lastGUID, self.lastAt = guid, GetTime() end
 
-    local name = UnitName("target")
+    local name = UnitNameIfReadable("target")
     local mapID, zone, subzone, mapX, mapY = PlayerLocation()
     self.pending = {
-        guid = guid, name = Readable(name) and name or nil,
+        guid = guid, name = name,
         npc  = guid and NpcID(guid) or nil, diff = Difficulty(),
         mapID = mapID, zone = zone, subzone = subzone,
         mapX = mapX, mapY = mapY,
@@ -719,13 +743,14 @@ function Addon:UI_ERROR_MESSAGE(errType, message)
         if not mapID and not zone and not subzone then
             mapID, zone, subzone = PlayerLocation()
         end
-        local name = Readable(rec.name) and rec.name or nil
-        if not name then
-            local ok, targetName = pcall(UnitName, "target")
-            if ok and Readable(targetName) then name = targetName end
+        local name = Readable(rec.name) and rec.name or UnitNameIfReadable("target")
+        if not name and npc then
+            local row = self.db.npcs[NpcKey(npc, rec.diff or Difficulty())]
+            name = row and row.name
         end
         local entry = {
-            t = time(), name = name, npc = npc, diff = rec.diff or Difficulty(),
+            t = time(), name = name or ANONYMOUS_CITIZEN, npc = npc,
+            diff = rec.diff or Difficulty(),
             mapID = mapID, zone = zone, subzone = subzone,
             copper = 0, items = 0, outcome = "No pockets",
         }
@@ -807,9 +832,10 @@ function Addon:RecordPick(rec)
         item.last = time()
     end)
 
+    local name = Readable(rec.name) and rec.name or UnitNameIfReadable("target")
     local row = self:Row(rec.npc, rec.diff)
     if row then
-        row.name   = row.name or rec.name
+        row.name   = row.name or name
         row.pickpocketable = true
         row.pocketless = false
         row.picks  = row.picks + 1
@@ -825,7 +851,8 @@ function Addon:RecordPick(rec)
     end
 
     self.db.recent[#self.db.recent + 1] = {
-        t = time(), name = rec.name, npc = rec.npc, diff = rec.diff,
+        t = time(), name = name or (row and row.name) or ANONYMOUS_CITIZEN,
+        npc = rec.npc, diff = rec.diff,
         mapID = rec.mapID, zone = rec.zone, subzone = rec.subzone,
         copper = rec.copper or 0, items = itemCount, outcome = "Picked",
     }
@@ -896,7 +923,7 @@ function Addon:StartInspect()
             .. " " .. tostring(spawn.npc) .. " " .. (spawn.guid or ""):sub(-10)
     end
 
-    self.inspectEnabled, self.inspectCount = true, 0
+    self.inspectEnabled, self.inspectCount, self.tipErrored = true, 0, nil
     if ns.UI then ns.UI:ShowInspectText(table.concat(lines, "\n")) end
     self:Print("inspection enabled; hover units to record (/adl inspect off or Exit Inspect to stop)")
 end

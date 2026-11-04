@@ -4,6 +4,7 @@ if not Addon then return end
 
 local Stats = {}
 ns.Stats = Stats
+local ANONYMOUS_CITIZEN = "Anonymous Citizen"
 
 local session
 
@@ -225,8 +226,14 @@ function Stats:BuildReport()
     if #db.recent == 0 then out[#out + 1] = "  (none)" end
     for i = #db.recent, math.max(1, #db.recent - 14), -1 do
         local e = db.recent[i]
+        local name = ns.Readable(e.name) and e.name ~= "" and e.name or nil
+        if not name and e.npc then
+            local row = db.npcs[Addon.NpcKey(e.npc, e.diff)]
+            name = row and ns.Readable(row.name) and row.name or nil
+        end
+        name = name or (e.npc and ("NPC " .. tostring(e.npc))) or ANONYMOUS_CITIZEN
         out[#out + 1] = ("  %s  %-24s %10s  %d item(s)"):format(
-            date("%H:%M", e.t), (e.name or "?"):sub(1, 24),
+            date("%H:%M", e.t), name:sub(1, 24),
             ns.Coins(e.copper), e.items)
     end
     out[#out + 1] = ""

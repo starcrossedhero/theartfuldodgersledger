@@ -179,7 +179,7 @@ function Commands:Record(token, inspect, tooltip, data)
         count = st.count
         P("")
     end
-    P(string.format("#%d  %s  %s", count, date("%H:%M:%S"), token))
+    P(string.format("#%d  %s  %s", count, date("%H:%M:%S"), Safe(token)))
     if inspect then
         F("gameTooltip", function() return tooltip == GameTooltip end)
         F("dataType", function() return type(data) end)
@@ -196,6 +196,7 @@ function Commands:Record(token, inspect, tooltip, data)
     F("guid",       function() return UnitGUID(token) end)
     F("level",      function() return UnitLevel(token) end)
     F("creatureType", function() return UnitCreatureType(token) end)
+    F("creatureTypeID", function() local _, id = UnitCreatureType(token); return id end)
     F("isDead",     function() return UnitIsDead(token) end)
     P(string.format("  %-13s = %s", "you", you))
     F("petToken",   function() return UnitIsUnit("pet", token) end)
@@ -212,15 +213,21 @@ function Commands:Record(token, inspect, tooltip, data)
     F("class",      function() return UnitClass(token) end)
 
     local mine = false
+    local relationshipUnknown = false
     for _, relationship in ipairs({ "pet", "demon", "totem", "guardian" }) do
         local ok, value = pcall(function() return UnitIsUnit(relationship, token) end)
-        if ok and Safe(value) == "true" then mine = true break end
+        local result = ok and Safe(value) or nil
+        if result == "true" then mine = true break end
+        if result ~= "false" then relationshipUnknown = true end
     end
     local guid = cc(function() return UnitGUID(token) end)
     if petGuid and petGuid ~= "nil" and petGuid ~= "ERR" and guid == petGuid then mine = true end
-    local isPlayer = cc(function() return UnitIsPlayer(token) end) == "true"
+    local playerState = cc(function() return UnitIsPlayer(token) end)
+    local isPlayer = playerState == "true"
     if isPlayer then
         P("  [if] = PLAYER -> hide, no label, no db row")
+    elseif playerState ~= "false" or relationshipUnknown then
+        P("  [if] = UNKNOWN -> protected unit classification")
     elseif mine then
         P("  [if] = MINE -> prelabel 'no pockets', no db row")
     else
@@ -240,5 +247,7 @@ function Commands:Record(token, inspect, tooltip, data)
 end
 
 function Commands:InspectUnit(token, tooltip, data)
-    if Addon.inspectEnabled then self:Record(token, true, tooltip, data) end
+    if not Addon.inspectEnabled then return end
+    if not ns.Readable(token) then token = "mouseover" end
+    self:Record(token, true, tooltip, data)
 end
