@@ -1,15 +1,19 @@
 name: Release
 on:
+  pull_request:
+    branches:
+      - main
   push:
+    branches:
+      - main
     tags:
-      - '*'
-
-permissions:
-  contents: write
+      - 'v*'
 
 jobs:
-  release:
+  package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Package addon
@@ -21,7 +25,27 @@ jobs:
           cp -R ui "$package_dir/"
           cd dist
           zip -r ../TheArtfulDodgersLedger.zip TheArtfulDodgersLedger
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheArtfulDodgersLedger-${{ github.run_id }}-${{ github.run_attempt }}
+          path: TheArtfulDodgersLedger.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TheArtfulDodgersLedger-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist
       - name: Upload Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: 'TheArtfulDodgersLedger.zip'
+          artifacts: 'dist/TheArtfulDodgersLedger.zip'
