@@ -30,12 +30,69 @@ local function LocationPosition(location, sourceMapID, targetMapID)
     return x, y
 end
 
+local function MapInfo(mapID, cache)
+    if cache[mapID] == nil then
+        cache[mapID] = false
+        if C_Map and type(C_Map.GetMapInfo) == "function" then
+            local ok, info = pcall(C_Map.GetMapInfo, mapID)
+            if ok and type(info) == "table" then cache[mapID] = info end
+        end
+    end
+    return cache[mapID] or nil
+end
+
+local function ChildMapOnTarget(sourceMapID, targetMapID, mapInfoCache)
+    if sourceMapID == targetMapID then return end
+    local currentMapID = sourceMapID
+    for _ = 1, 100 do
+        local info = MapInfo(currentMapID, mapInfoCache)
+        local parentMapID = info and tonumber(info.parentMapID)
+        if not parentMapID or parentMapID <= 0 or parentMapID == currentMapID then return end
+        if parentMapID == targetMapID then return currentMapID end
+        currentMapID = parentMapID
+    end
+end
+
+local function NewLocationAggregate(mapID, name)
+    return {
+        mapID = mapID, displayName = name, zone = name,
+        picks = 0, copper = 0, items = {}, itemNames = {}, itemLinks = {},
+        itemPicks = {}, itemSamplePicks = 0, last = 0,
+        positionSamples = 0, weightedX = 0, weightedY = 0,
+    }
+end
+
+local function AddToAggregate(aggregate, location, x, y)
+    aggregate.picks = aggregate.picks + (tonumber(location.picks) or 0)
+    aggregate.copper = aggregate.copper + (tonumber(location.copper) or 0)
+    aggregate.itemSamplePicks = aggregate.itemSamplePicks + (tonumber(location.itemSamplePicks) or 0)
+    aggregate.last = math.max(aggregate.last, tonumber(location.last) or 0)
+
+    for itemID, quantity in pairs(location.items or {}) do
+        aggregate.items[itemID] = (tonumber(aggregate.items[itemID]) or 0) + (tonumber(quantity) or 0)
+    end
+    for itemID, name in pairs(location.itemNames or {}) do
+        aggregate.itemNames[itemID] = aggregate.itemNames[itemID] or name
+    end
+    for itemID, link in pairs(location.itemLinks or {}) do
+        aggregate.itemLinks[itemID] = aggregate.itemLinks[itemID] or link
+    end
+    for itemID, picks in pairs(location.itemPicks or {}) do
+        aggregate.itemPicks[itemID] = (tonumber(aggregate.itemPicks[itemID]) or 0) + (tonumber(picks) or 0)
+    end
+
+    local samples = tonumber(location.positionSamples) or 0
+    aggregate.positionSamples = aggregate.positionSamples + samples
+    aggregate.weightedX = aggregate.weightedX + x * samples
+    aggregate.weightedY = aggregate.weightedY + y * samples
+end
+
 local function ShowLocationTooltip(pin)
     local location = pin.location
     if not location then return end
 
     GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
-    GameTooltip:SetText(location.subzone or location.zone or "Known Haunt")
+    GameTooltip:SetText(location.displayName or location.subzone or location.zone or "Known Haunt")
     if location.zone and location.subzone and location.zone ~= location.subzone then
         GameTooltip:AddLine(location.zone, 0.75, 0.75, 0.75)
     end
@@ -159,6 +216,7 @@ function ProviderMixin:RefreshAllData()
 
     local targetMapID = mapCanvas:GetMapID()
     if not targetMapID then return end
+    local mapInfoCache, aggregates = {}, {}
     for mapKey, zones in pairs(Addon.db.locations or {}) do
         local sourceMapID = tonumber(mapKey)
         if sourceMapID and sourceMapID > 0 and type(zones) == "table" then
@@ -168,15 +226,35 @@ function ProviderMixin:RefreshAllData()
                         if type(location) == "table" and (tonumber(location.positionSamples) or 0) > 0 then
                             local x, y = LocationPosition(location, sourceMapID, targetMapID)
                             if x and y then
-                                local pin = self:GetMap():AcquirePin(PIN_TEMPLATE, location)
-                                pin:SetPosition(x, y)
-                                pin:Show()
+                                local groupMapID = ChildMapOnTarget(sourceMapID, targetMapID, mapInfoCache)
+                                if groupMapID then
+                                    local info = MapInfo(groupMapID, mapInfoCache)
+                                    local groupName = info and info.name or location.zone or tostring(groupMapID)
+                                    local aggregate = aggregates[groupMapID]
+                                    if not aggregate then
+                                        aggregate = NewLocationAggregate(groupMapID, groupName)
+                                        aggregates[groupMapID] = aggregate
+                                    end
+                                    AddToAggregate(aggregate, location, x, y)
+                                else
+                                    local pin = self:GetMap():AcquirePin(PIN_TEMPLATE, location)
+                                    pin:SetPosition(x, y)
+                                    pin:Show()
+                                end
                             end
                         end
                     end
                 end
             end
         end
+    end
+    for _, aggregate in pairs(aggregates) do
+        aggregate.positionX = aggregate.weightedX / aggregate.positionSamples
+        aggregate.positionY = aggregate.weightedY / aggregate.positionSamples
+        aggregate.weightedX, aggregate.weightedY = nil, nil
+        local pin = self:GetMap():AcquirePin(PIN_TEMPLATE, aggregate)
+        pin:SetPosition(aggregate.positionX, aggregate.positionY)
+        pin:Show()
     end
 end
 
