@@ -100,6 +100,11 @@ Addon.NpcKey = NpcKey
 
 function ns.Coins(copper)
     local c = math.floor((copper or 0) + 0.5)
+    local currencyInfo = C_CurrencyInfo
+    if currencyInfo and type(currencyInfo.GetCoinTextureString) == "function" then
+        return currencyInfo.GetCoinTextureString(c, 12)
+    end
+
     local g, s, p = math.floor(c / 10000), math.floor((c % 10000) / 100), c % 100
     if g > 0 then return ("%dg %ds %dc"):format(g, s, p) end
     if s > 0 then return ("%ds %dc"):format(s, p) end
