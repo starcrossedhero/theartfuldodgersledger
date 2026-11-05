@@ -244,7 +244,7 @@ local function GetRows(view)
         for _, entry in pairs(db.npcs or {}) do
             if not entry.pocketless then
                 rows[#rows + 1] = {
-                    name = entry.name or tostring(entry.npc or "?"),
+                    name = ns.ResolveNPCName(entry.npc, entry.name),
                     diff = entry.diff or 0,
                     picks = entry.picks or 0,
                     copper = entry.copper or 0,
@@ -377,6 +377,7 @@ function UI:Create()
 
     f.summary = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     f.summary:SetPoint("TOPLEFT", 14, -40)
+    f.summary:SetJustifyH("LEFT")
 
     f.tabs = {}
     local tabSpecs = {
@@ -482,7 +483,7 @@ function UI:Refresh()
         self:SetView(activeView)
     end
     frame.summary:SetText(ns.Stats:GetPrettyPrintTotalLootedString()
-        .. "    " .. ns.Stats:GetPrettyPrintSessionLootedString())
+        .. "\n" .. ns.Stats:GetPrettyPrintSessionLootedString())
     if activeView == "report" then
         frame.reportInfo:SetText(ns.Stats:GetReportMetadata())
         frame.editBox:SetText(table.concat(ns.Stats:BuildReport(), "\n"))
@@ -648,35 +649,23 @@ function UI:RefreshTable()
     local rows = GetRows(activeView)
     SortRows(rows, sort)
     frame.tableContent:SetHeight(math.max(1, #rows * ROW_HEIGHT))
-    local totalPicks, totalCopper, totalItems, samplePicks = 0, 0, 0, 0
-    local approximateRates = false
-    for _, data in ipairs(rows) do
-        totalPicks = totalPicks + (data.picks or 0)
-        totalCopper = totalCopper + (data.copper or 0)
-        totalItems = totalItems + (data.quantity or data.count or 0)
-        samplePicks = samplePicks + (data.itemSamplePicks or 0)
-        if data.itemRatesApproximate then approximateRates = true end
-    end
-    local averageCopper = totalPicks > 0 and totalCopper / totalPicks or 0
-    if activeView == "creatures" or activeView == "locations" then
-        frame.tableSummary:SetText(("Ledger: %d lifts  |  %d items  |  %s gains  |  %s purse/lift  |  rates from %d picks%s")
-            :format(totalPicks, totalItems, ns.Coins(totalCopper), ns.Coins(averageCopper),
-                samplePicks, approximateRates and " (estimated)" or ""))
-    elseif activeView == "containers" then
-        local openings = 0
-        for _, data in ipairs(rows) do openings = openings + (data.openings or 0) end
-        frame.tableSummary:SetText(("Lockboxes cracked: %d  |  %d items  |  %s copper")
-            :format(openings, totalItems, ns.Coins(totalCopper)))
-    elseif activeView == "items" then
-        local hasApproximateRates = false
-        for _, item in pairs(Addon.db.items or {}) do
-            if item.dropRateApproximate then hasApproximateRates = true; break end
-        end
-        frame.tableSummary:SetText(("Item sample: %d pocket lifts%s")
-            :format(Addon.db.itemSamplePicks or 0,
-                hasApproximateRates and " (legacy rates estimated)" or ""))
-    else
+    if activeView == "history" then
         frame.tableSummary:SetText("Recent jobs, including attempts with no take")
+    elseif activeView == "creatures" then
+        frame.tableSummary:SetText("Marks whose pockets were lifted, with their haul and possible take")
+    elseif activeView == "locations" then
+        frame.tableSummary:SetText("Locations of successful lifts, with gains and possible take")
+    elseif activeView == "items" then
+        local description = "Goods lifted from pockets, with quantities and take rates"
+        for _, item in ipairs(rows) do
+            if item.dropRateApproximate then
+                description = description .. " (legacy rates estimated)"
+                break
+            end
+        end
+        frame.tableSummary:SetText(description)
+    elseif activeView == "containers" then
+        frame.tableSummary:SetText("Lockboxes cracked, with their gains and possible take")
     end
     if activeView == "creatures" then
         frame.empty:SetText("No pockets lifted from these marks yet")

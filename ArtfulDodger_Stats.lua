@@ -4,7 +4,6 @@ if not Addon then return end
 
 local Stats = {}
 ns.Stats = Stats
-local ANONYMOUS_CITIZEN = "Anonymous Citizen"
 
 local session
 
@@ -17,7 +16,10 @@ function Stats:Init()
 end
 
 function Stats:ResetSession()
-    session = { start = time(), picks = 0, copper = 0, items = 0, containers = 0, containerCopper = 0 }
+    session = {
+        start = time(), picks = 0, copper = 0, items = 0,
+        pocketItems = 0, containers = 0, containerCopper = 0, containerItems = 0,
+    }
 end
 
 function Stats:ResetHistory()
@@ -36,7 +38,9 @@ function Stats:OnContainerRecorded(rec)
     session.containers = session.containers + 1
     session.containerCopper = session.containerCopper + (rec.copper or 0)
     for _, item in ipairs(rec.items or {}) do
-        session.items = session.items + (item.qty or 1)
+        local quantity = item.qty or 1
+        session.items = session.items + quantity
+        session.containerItems = session.containerItems + quantity
     end
 end
 
@@ -45,32 +49,41 @@ function Stats:OnPickRecorded(rec)
     session.picks  = session.picks + 1
     session.copper = session.copper + (rec.copper or 0)
     for _, item in ipairs(rec.items) do
-        session.items = session.items + (item.qty or 1)
+        local quantity = item.qty or 1
+        session.items = session.items + quantity
+        session.pocketItems = session.pocketItems + quantity
     end
 end
 
 function Stats:GetPrettyPrintTotalLootedString()
-    local t = Addon.db.totals
-    local openings, copper = 0, 0
-    for _, container in pairs(Addon.db.containers or {}) do
-        openings = openings + (tonumber(container.openings) or 0)
-        copper = copper + (tonumber(container.copper) or 0)
+    local db = Addon.db
+    local t, pocketItems = db.totals, 0
+    for _, item in pairs(db.items or {}) do
+        if type(item) == "table" then
+            pocketItems = pocketItems + (tonumber(item.count) or 0)
+        end
     end
-    return ("Lifetime take: %d %s, %s %s | %d lockboxes cracked, %s"):format(
-        t.picks, ns.Voice.lifted, ns.Coins(t.copper), ns.Voice.gains,
-        openings, ns.Coins(copper))
+    local openings, copper, containerItems = 0, 0, 0
+    for _, container in pairs(db.containers or {}) do
+        if type(container) == "table" then
+            openings = openings + (tonumber(container.openings) or 0)
+            copper = copper + (tonumber(container.copper) or 0)
+            for _, count in pairs(container.items or {}) do
+                containerItems = containerItems + (tonumber(count) or 0)
+            end
+        end
+    end
+    return ("Lifetime: %d %s for %s and %d items | %d lockboxes cracked for %s and %d items"):format(
+        t.picks, ns.Voice.lifted, ns.Coins(t.copper), pocketItems,
+        openings, ns.Coins(copper), containerItems)
 end
 
 function Stats:GetPrettyPrintSessionLootedString()
     local mins = math.max(1, math.floor((time() - session.start) / 60))
-    local text = ("Session (%dm): %d %s, %s %s, %s/hr"):format(
-        mins, session.picks, ns.Voice.lifted, ns.Coins(session.copper), ns.Voice.gains,
+    return ("Session (%dm): %d %s for %s and %d items | %d lockboxes cracked for %s and %d items | %s stolen per hour"):format(
+        mins, session.picks, ns.Voice.lifted, ns.Coins(session.copper), session.pocketItems,
+        session.containers, ns.Coins(session.containerCopper), session.containerItems,
         ns.Coins(math.floor(session.copper / mins * 60)))
-    if session.containers > 0 then
-        text = text .. (" | %d lockboxes cracked, %s"):format(
-            session.containers, ns.Coins(session.containerCopper))
-    end
-    return text
 end
 
 local function TopRow(rows, field)
@@ -163,7 +176,7 @@ local function AddChronicle(out, db, sessionStats)
     for _, row in pairs(db.npcs or {}) do
         if type(row) == "table" and (tonumber(row.picks) or 0) > 0 then
             marks[#marks + 1] = {
-                name = row.name or tostring(row.npc or "Unknown mark"),
+                name = ns.ResolveNPCName(row.npc, row.name),
                 id = tostring(row.npc or "") .. ":" .. tostring(row.diff or 0),
                 copper = tonumber(row.copper) or 0,
                 picks = tonumber(row.picks) or 0,
@@ -226,12 +239,8 @@ function Stats:BuildReport()
     if #db.recent == 0 then out[#out + 1] = "  (none)" end
     for i = #db.recent, math.max(1, #db.recent - 14), -1 do
         local e = db.recent[i]
-        local name = ns.Readable(e.name) and e.name ~= "" and e.name or nil
-        if not name and e.npc then
-            local row = db.npcs[Addon.NpcKey(e.npc, e.diff)]
-            name = row and ns.Readable(row.name) and row.name or nil
-        end
-        name = name or (e.npc and ("NPC " .. tostring(e.npc))) or ANONYMOUS_CITIZEN
+        local row = e.npc and db.npcs[Addon.NpcKey(e.npc, e.diff)]
+        local name = ns.ResolveNPCName(e.npc, e.name, row and row.name)
         out[#out + 1] = ("  %s  %-24s %10s  %d item(s)"):format(
             date("%H:%M", e.t), name:sub(1, 24),
             ns.Coins(e.copper), e.items)
@@ -246,7 +255,7 @@ function Stats:BuildReport()
     for i = 1, math.min(#rows, 40) do
         local r = rows[i]
         out[#out + 1] = ("%-26s %4s %5d %11s  %s"):format(
-            (r.name or tostring(r.npc)):sub(1, 26), tostring(r.diff),
+            ns.ResolveNPCName(r.npc, r.name):sub(1, 26), tostring(r.diff),
             r.picks, ns.Coins(r.copper), r.pocketless and "pocketless" or "")
     end
     if #rows == 0 then out[#out + 1] = "(no successful lifts recorded yet)" end

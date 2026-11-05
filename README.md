@@ -11,6 +11,7 @@ The Artful Dodger's Ledger is a World of Warcraft addon for Rogues. It keeps an 
 - Tracks lockbox and junkbox openings and provides an optional movable opener button.
 - Keeps persistent history and a separate summary for the current play session.
 - Builds a heist chronicle in the report from lifetime records and current-session totals, including the most profitable marks, busiest haunts, and common finds when available.
+- In instances with restricted unit identity, target-specific indicators are omitted; but loot can still be recorded anonymously.
 
 ## Install
 
@@ -40,6 +41,10 @@ The extracted folder should be named `TheArtfulDodgersLedger` and contain `TheAr
 The main window can also be opened or closed from **The Artful Dodger's Ledger** entry in the default AddOn Compartment drawer.
 
 Display options are available under **Settings > AddOns > The Artful Dodger's Ledger**. The addon is intended for Retail and only activates for Rogue characters.
+
+## NPC pocket list
+
+The addon includes a default seed list of NPCs known to have pockets, but treats the data it records itself as the source of truth.
 
 ## License
 

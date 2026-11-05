@@ -1,4 +1,4 @@
-## Interface: 120105, 11509
+## Interface: 120105
 ## Title: The Artful Dodger's Ledger
 ## Notes: Track your accumulation of pilfered goods
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
@@ -10,6 +10,7 @@
 ## AddonCompartmentFuncOnLeave: ArtfulDodger_OnCompartmentLeave
 
 ArtfulDodger_Containers.lua
+ArtfulDodger_PocketList.lua
 ArtfulDodger_Core.lua
 ArtfulDodger_Tooltips.lua
 ArtfulDodger_Stats.lua

@@ -97,6 +97,19 @@ local function Readable(v)    return type(v) == "string" and not IsSecretValue(v
 local function ReadableNum(v) return type(v) == "number" and not IsSecretValue(v) end
 ns.Readable = Readable
 
+local ANONYMOUS_CITIZEN = "Anonymous Citizen"
+local PocketList = ns.PocketList or {}
+
+-- Names in order of trust; the catalog only fills gaps.
+function ns.ResolveNPCName(npcID, ...)
+    for i = 1, select("#", ...) do
+        local name = (select(i, ...))
+        if Readable(name) and name ~= "" and name ~= ANONYMOUS_CITIZEN then return name end
+    end
+    local entry = type(npcID) == "number" and PocketList[npcID]
+    return entry and entry.name or ANONYMOUS_CITIZEN
+end
+
 local function Difficulty() return select(3, GetInstanceInfo()) or 0 end
 Addon.Difficulty = Difficulty
 
@@ -237,6 +250,13 @@ local function IsNPCUnit(unit)
         and UnitBool(UnitPlayerControlled, unit) == false
 end
 
+-- Only filters unknown NPCs to limit false positives; known and catalogued NPCs bypass it.
+local LIKELY_POCKET_CREATURE_TYPES = {
+    [3] = true, -- Demon
+    [6] = true, -- Undead
+    [7] = true, -- Humanoid
+}
+
 local function IsPickpocketCandidate(unit)
     if not IsNPCUnit(unit) or type(UnitCreatureType) ~= "function" then
         return false
@@ -244,7 +264,7 @@ local function IsPickpocketCandidate(unit)
 
     local ok, _, creatureTypeID = pcall(UnitCreatureType, unit)
     return ok and ReadableNum(creatureTypeID)
-        and (creatureTypeID == 6 or creatureTypeID == 7)
+        and LIKELY_POCKET_CREATURE_TYPES[creatureTypeID] == true
 end
 
 local function UnitNameIfReadable(unit)
@@ -252,8 +272,6 @@ local function UnitNameIfReadable(unit)
     local ok, name = pcall(UnitName, unit)
     if ok and Readable(name) and name ~= "" then return name end
 end
-
-local ANONYMOUS_CITIZEN = "Anonymous Citizen"
 
 function Addon:GetPickpocketState(unit, guid)
     if not Readable(guid) and type(unit) == "string" and type(UnitGUID) == "function" then
@@ -277,11 +295,12 @@ function Addon:GetPickpocketState(unit, guid)
     end
     local row = self.db.npcs[NpcKey(npc, Difficulty())]
     local knownPickpocketable = row and row.pickpocketable
+    local catalogHint = PocketList[npc] ~= nil
 
     if not IsNPCUnit(unit)
         or UnitBool(UnitIsDeadOrGhost, unit) ~= false
         or UnitBool(UnitCanAttack, "player", unit) ~= true
-        or (not knownPickpocketable and not IsPickpocketCandidate(unit)) then
+        or (not knownPickpocketable and not catalogHint and not IsPickpocketCandidate(unit)) then
         return nil
     end
     return "likely", nil, nil, knownPickpocketable == true
@@ -486,6 +505,7 @@ function Addon:Enable()
     self:RegisterEvent("LOOT_OPENED")
     self:RegisterEvent("UI_ERROR_MESSAGE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self:RegisterEvent("UNIT_LOOT")
 
     self:Debug(self.version, "build " .. tostring(ClientCompatibility.buildNumber),
         "interface " .. tostring(ClientCompatibility.interfaceVersion),
@@ -551,6 +571,7 @@ function Addon:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID)
     if not ReadableNum(spellID) then return end
     if spellID ~= ClientCompatibility.pickpocketSpellID then return end
 
+    self.lastUnitLoot = nil
     local guid = UnitGUID("target")
     if not Readable(guid) then guid = nil end
     if guid then self.lastGUID, self.lastAt = guid, GetTime() end
@@ -565,6 +586,16 @@ function Addon:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID)
         at = GetTime(), copper = 0, items = {},
     }
     self.db.totals.casts = self.db.totals.casts + 1
+end
+
+function Addon:UNIT_LOOT(guid, hasLoot)
+    local guidReadable = Readable(guid)
+    local pending = self.pending
+    local age = pending and (GetTime() - pending.at)
+
+    if guidReadable and age and age >= 0 and age <= 6 then
+        self.lastUnitLoot = { guid = guid, at = GetTime() }
+    end
 end
 
 local function ReadLootWindow()
@@ -591,7 +622,25 @@ local function ReadLootWindow()
     return rec
 end
 
+local function LootSourceMatches(guid)
+    if not Readable(guid) then return nil end
+    local foundReadableSource = false
+    for slot = 1, (GetNumLootItems() or 0) do
+        local sources = { GetLootSourceInfo(slot) }
+        for source = 1, #sources, 2 do
+            local sourceGUID = sources[source]
+            if Readable(sourceGUID) then
+                foundReadableSource = true
+                if sourceGUID == guid then return true end
+            end
+        end
+    end
+    if foundReadableSource then return false end
+end
+
 function Addon:LOOT_OPENED(autoLoot, isFromItem)
+    local unitLoot = self.lastUnitLoot
+    self.lastUnitLoot = nil
     local pending = self.pendingContainerOpen
     local pendingItemID = pending and GetTime() - pending.at <= 5 and pending.itemID
     self.pendingContainerOpen = nil
@@ -605,8 +654,22 @@ function Addon:LOOT_OPENED(autoLoot, isFromItem)
     if not rec then return end
     if GetTime() - rec.at > 6 then self.pending = nil; return end
 
-    local src = GetLootSourceInfo(1)
-    if Readable(src) and Readable(rec.guid) and src ~= rec.guid then return end
+    local unitLootAge = unitLoot and (GetTime() - unitLoot.at)
+    local usingUnitLootGUID = not Readable(rec.guid)
+        and unitLoot and unitLootAge <= 6
+    local sourceGUID = Readable(rec.guid) and rec.guid
+        or (usingUnitLootGUID and unitLoot.guid)
+    local sourceMatches = LootSourceMatches(sourceGUID)
+
+    if sourceMatches == false then
+        self.pending = nil
+        return
+    elseif sourceMatches == true then
+        rec.guid = sourceGUID
+        rec.npc = rec.npc or NpcID(sourceGUID)
+    else
+        rec.guid, rec.name, rec.npc = nil, nil, nil
+    end
 
     local loot = ReadLootWindow()
     rec.copper, rec.items = loot.copper, loot.items
@@ -743,13 +806,10 @@ function Addon:UI_ERROR_MESSAGE(errType, message)
         if not mapID and not zone and not subzone then
             mapID, zone, subzone = PlayerLocation()
         end
-        local name = Readable(rec.name) and rec.name or UnitNameIfReadable("target")
-        if not name and npc then
-            local row = self.db.npcs[NpcKey(npc, rec.diff or Difficulty())]
-            name = row and row.name
-        end
+        local row = npc and self.db.npcs[NpcKey(npc, rec.diff or Difficulty())]
+        local name = ns.ResolveNPCName(npc, rec.name, UnitNameIfReadable("target"), row and row.name)
         local entry = {
-            t = time(), name = name or ANONYMOUS_CITIZEN, npc = npc,
+            t = time(), name = name, npc = npc,
             diff = rec.diff or Difficulty(),
             mapID = mapID, zone = zone, subzone = subzone,
             copper = 0, items = 0, outcome = "No pockets",
@@ -832,7 +892,7 @@ function Addon:RecordPick(rec)
         item.last = time()
     end)
 
-    local name = Readable(rec.name) and rec.name or UnitNameIfReadable("target")
+    local name = Readable(rec.name) and rec.name or nil
     local row = self:Row(rec.npc, rec.diff)
     if row then
         row.name   = row.name or name
@@ -851,7 +911,7 @@ function Addon:RecordPick(rec)
     end
 
     self.db.recent[#self.db.recent + 1] = {
-        t = time(), name = name or (row and row.name) or ANONYMOUS_CITIZEN,
+        t = time(), name = ns.ResolveNPCName(rec.npc, name, row and row.name),
         npc = rec.npc, diff = rec.diff,
         mapID = rec.mapID, zone = rec.zone, subzone = rec.subzone,
         copper = rec.copper or 0, items = itemCount, outcome = "Picked",
