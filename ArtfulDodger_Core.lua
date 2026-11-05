@@ -98,7 +98,7 @@ local function ReadableNum(v) return type(v) == "number" and not IsSecretValue(v
 ns.Readable = Readable
 
 local ANONYMOUS_CITIZEN = "Anonymous Citizen"
-local PocketList = ns.PocketList or {}
+local MarkCensus = ns.MarkCensus or {}
 
 -- Names in order of trust; the catalog only fills gaps.
 function ns.ResolveNPCName(npcID, ...)
@@ -106,8 +106,7 @@ function ns.ResolveNPCName(npcID, ...)
         local name = (select(i, ...))
         if Readable(name) and name ~= "" and name ~= ANONYMOUS_CITIZEN then return name end
     end
-    local entry = type(npcID) == "number" and PocketList[npcID]
-    return entry and entry.name or ANONYMOUS_CITIZEN
+    return type(npcID) == "number" and MarkCensus[npcID] or ANONYMOUS_CITIZEN
 end
 
 local function Difficulty() return select(3, GetInstanceInfo()) or 0 end
@@ -295,12 +294,11 @@ function Addon:GetPickpocketState(unit, guid)
     end
     local row = self.db.npcs[NpcKey(npc, Difficulty())]
     local knownPickpocketable = row and row.pickpocketable
-    local catalogHint = PocketList[npc] ~= nil
 
     if not IsNPCUnit(unit)
         or UnitBool(UnitIsDeadOrGhost, unit) ~= false
         or UnitBool(UnitCanAttack, "player", unit) ~= true
-        or (not knownPickpocketable and not catalogHint and not IsPickpocketCandidate(unit)) then
+        or (not knownPickpocketable and MarkCensus[npc] == nil and not IsPickpocketCandidate(unit)) then
         return nil
     end
     return "likely", nil, nil, knownPickpocketable == true

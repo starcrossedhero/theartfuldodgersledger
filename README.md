@@ -42,7 +42,7 @@ The main window can also be opened or closed from **The Artful Dodger's Ledger**
 
 Display options are available under **Settings > AddOns > The Artful Dodger's Ledger**. The addon is intended for Retail and only activates for Rogue characters.
 
-## NPC pocket list
+## Mark census
 
 The addon includes a default seed list of NPCs known to have pockets, but treats the data it records itself as the source of truth.
 
