@@ -22,7 +22,7 @@ jobs:
           mkdir -p "$package_dir"
           cp ./*.lua ./*.toc "$package_dir/"
           cp README.md LICENSE "$package_dir/"
-          cp -R ui "$package_dir/"
+          cp -R ui data "$package_dir/"
           cd dist
           zip -r ../TheArtfulDodgersLedger.zip TheArtfulDodgersLedger
       - name: Upload build artifact
