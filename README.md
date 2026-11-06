@@ -38,9 +38,9 @@ The extracted folder should be named `TheArtfulDodgersLedger` and contain `TheAr
 | `/adl reset session` | Reset current-session statistics. |
 | `/adl reset history` | Clear all recorded history and reset the session. |
 
-The main window can also be opened or closed from **The Artful Dodger's Ledger** entry in the default AddOn Compartment drawer.
+The main window can also be opened or closed from **The Artful Dodger's Ledger** entry in the AddOn Compartment, or from the minimap button on clients without an AddOn Compartment.
 
-Display options are available under **Settings > AddOns > The Artful Dodger's Ledger**. The addon is intended for Retail and only activates for Rogue characters.
+Display options are available under **Settings > AddOns > The Artful Dodger's Ledger**. The addon only activates for Rogue characters; supported client versions are listed in the TOC.
 
 ## Mark census
 

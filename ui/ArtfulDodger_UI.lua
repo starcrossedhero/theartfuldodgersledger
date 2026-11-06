@@ -344,6 +344,67 @@ local function SortRows(rows, sort)
     end)
 end
 
+local function CreateMinimapButton()
+    if rawget(_G, "AddonCompartmentFrame") or not Minimap then return end
+
+    local button = CreateFrame("Button", "ArtfulDodgerMinimapButton", UIParent)
+    button:SetSize(24, 24)
+    button:SetPoint("BOTTOMRIGHT", Minimap, "TOPLEFT", 0, 0)
+    button:SetFrameStrata("HIGH")
+    button:SetMovable(true)
+    button:SetClampedToScreen(true)
+    button:RegisterForDrag("RightButton")
+    button:RegisterForClicks("LeftButtonUp")
+    button:SetNormalTexture("Interface\\Icons\\INV_Misc_Coin_01")
+    local icon = button:GetNormalTexture()
+    icon:SetSize(20, 20)
+    icon:ClearAllPoints()
+    icon:SetPoint("CENTER", button, "CENTER")
+    local iconMask = button:CreateMaskTexture()
+    iconMask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
+    iconMask:SetAllPoints(icon)
+    icon:AddMaskTexture(iconMask)
+
+    local border = button:CreateTexture(nil, "BACKGROUND")
+    border:SetAllPoints(button)
+    border:SetColorTexture(0.72, 0.62, 0.38, 1)
+    local borderMask = button:CreateMaskTexture()
+    borderMask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
+    borderMask:SetAllPoints(border)
+    border:AddMaskTexture(borderMask)
+    button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+    button:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+
+    local position = Addon.db.settings.ledgerButtonPosition
+    if type(position) == "table" and type(position.x) == "number"
+        and type(position.y) == "number" then
+        button:ClearAllPoints()
+        button:SetPoint("CENTER", Minimap, "CENTER", position.x, position.y)
+    end
+    button:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    button:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local buttonX, buttonY = self:GetCenter()
+        local minimapX, minimapY = Minimap:GetCenter()
+        local savedPosition = Addon.db.settings.ledgerButtonPosition
+        if type(savedPosition) ~= "table" then savedPosition = {} end
+        savedPosition.x = buttonX - minimapX
+        savedPosition.y = buttonY - minimapY
+        Addon.db.settings.ledgerButtonPosition = savedPosition
+        self:ClearAllPoints()
+        self:SetPoint("CENTER", Minimap, "CENTER", savedPosition.x, savedPosition.y)
+    end)
+    button:SetScript("OnClick", function() UI:Toggle() end)
+    button:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("The Artful Dodger's Ledger", 1, 1, 1)
+        GameTooltip:AddLine("Click to open", 1, 1, 1)
+        GameTooltip:AddLine("Right-click and drag to move", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
 function UI:Init()
     Addon:RegisterMessage(ns.Events.UI.Toggle, self, "Toggle")
     Addon:RegisterMessage(ns.Events.Loot.PickRecorded, self, "QueueRefreshIfShown")
@@ -351,6 +412,7 @@ function UI:Init()
     Addon:RegisterMessage(ns.Events.History.AttemptRecorded, self, "QueueRefreshIfShown")
     Addon:RegisterMessage(ns.Events.Session.Reset, self, "RefreshIfShown")
     Addon:RegisterMessage(ns.Events.History.Reset, self, "RefreshIfShown")
+    CreateMinimapButton()
 end
 
 function UI:Create()

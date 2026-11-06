@@ -141,21 +141,28 @@ local function FormatHookError(message)
 end
 
 local function InstallTooltipHook()
-    if not (TooltipDataProcessor and Enum and Enum.TooltipDataType) then return false end
+    local function HandleUnitTooltip(tooltip, data)
+        local fine, errorMessage = xpcall(
+            function() OnUnitTooltip(tooltip, data) end,
+                FormatHookError)
+        if not fine and not Addon.tipErrored then
+            Addon.tipErrored = true
+            Addon:Print("|cffff2020tooltip hook error|r\n" .. tostring(errorMessage))
+        end
+    end
 
-    local ok, err = pcall(TooltipDataProcessor.AddTooltipPostCall,
-        Enum.TooltipDataType.Unit,
-        function(tooltip, data)
-            local fine, errorMessage = xpcall(
-                function() OnUnitTooltip(tooltip, data) end,
-                    FormatHookError)
-            if not fine and not Addon.tipErrored then
-                Addon.tipErrored = true
-                Addon:Print("|cffff2020tooltip hook error|r\n" .. tostring(errorMessage))
-            end
-        end)
+    local ok, err
+    if TooltipDataProcessor and type(TooltipDataProcessor.AddTooltipPostCall) == "function"
+        and Enum and Enum.TooltipDataType and Enum.TooltipDataType.Unit then
+        ok, err = pcall(TooltipDataProcessor.AddTooltipPostCall,
+            Enum.TooltipDataType.Unit, HandleUnitTooltip)
+    elseif GameTooltip and type(GameTooltip.HookScript) == "function" then
+        ok, err = pcall(GameTooltip.HookScript, GameTooltip, "OnTooltipSetUnit", HandleUnitTooltip)
+    else
+        return false
+    end
 
-    if not ok then Addon:Print("AddTooltipPostCall failed: " .. tostring(err)) end
+    if not ok then Addon:Print("Tooltip hook failed: " .. tostring(err)) end
     return ok
 end
 

@@ -162,12 +162,14 @@ local function NewDB()
         build    = ClientCompatibility.buildNumber,
         settings = {
             debug = false,
-            tooltip = true, tooltipCopper = false, tooltipItems = false, worldMap = false,
+            tooltip = true, tooltipCopper = true, tooltipItems = true, worldMap = false,
             lockboxOpener = true, lockboxOpenerPosition = { x = 0, y = 0 },
             targetBadge = true, nameplateBadge = true,
             targetBadgePosition = "RIGHT", nameplateBadgePosition = "RIGHT",
             targetBadgeIconSize = 16, targetBadgePadding = -20,
             nameplateBadgeIconSize = 16, nameplateBadgePadding = -5,
+            targetBadgeHorizontalOffset = 0, nameplateBadgeHorizontalOffset = 0,
+            targetBadgeVerticalOffset = 0, nameplateBadgeVerticalOffset = 0,
         },
         totals   = { casts = 0, picks = 0, already = 0, pocketless = 0, copper = 0 },
         npcs     = {},   -- ["<npcID>:<difficulty>"] = row
@@ -382,8 +384,12 @@ function Addon:Initialize()
     if self.db.settings.targetBadgePadding == nil then self.db.settings.targetBadgePadding = -20 end
     if self.db.settings.nameplateBadgeIconSize == nil then self.db.settings.nameplateBadgeIconSize = 16 end
     if self.db.settings.nameplateBadgePadding == nil then self.db.settings.nameplateBadgePadding = -5 end
-    if self.db.settings.tooltipCopper == nil then self.db.settings.tooltipCopper = false end
-    if self.db.settings.tooltipItems == nil then self.db.settings.tooltipItems = false end
+    if self.db.settings.targetBadgeHorizontalOffset == nil then self.db.settings.targetBadgeHorizontalOffset = 0 end
+    if self.db.settings.nameplateBadgeHorizontalOffset == nil then self.db.settings.nameplateBadgeHorizontalOffset = 0 end
+    if self.db.settings.tooltipCopper == nil then self.db.settings.tooltipCopper = true end
+    if self.db.settings.tooltipItems == nil then self.db.settings.tooltipItems = true end
+    if self.db.settings.targetBadgeVerticalOffset == nil then self.db.settings.targetBadgeVerticalOffset = 0 end
+    if self.db.settings.nameplateBadgeVerticalOffset == nil then self.db.settings.nameplateBadgeVerticalOffset = 0 end
     if self.db.settings.worldMap == nil then self.db.settings.worldMap = false end
     self.db.locations = self.db.locations or {}
     self.db.items = self.db.items or {}
@@ -599,10 +605,17 @@ end
 local function ReadLootWindow()
     local rec = { copper = 0, items = {} }
     for slot = 1, (GetNumLootItems() or 0) do
-        local name, _, quantity, _, _, _, _, _, _, isCoin = GetLootSlotInfo(slot)
+        local _, name, quantity, _, _, _, _, _, _, isCoin = GetLootSlotInfo(slot)
+        local moneyType = (Enum and Enum.LootSlotType and Enum.LootSlotType.Money) or 2
+        if type(GetLootSlotType) == "function" and GetLootSlotType(slot) == moneyType then
+            isCoin = true
+        end
         if isCoin then
-            local amount = select(2, GetLootSourceInfo(slot))
-            if ReadableNum(amount) then rec.copper = rec.copper + amount end
+            local sources = { GetLootSourceInfo(slot) }
+            for source = 2, #sources, 2 do
+                local amount = sources[source]
+                if ReadableNum(amount) then rec.copper = rec.copper + amount end
+            end
         else
             local link = GetLootSlotLink(slot)
             local itemID = Readable(link) and tonumber(link:match("item:(%d+)")) or nil

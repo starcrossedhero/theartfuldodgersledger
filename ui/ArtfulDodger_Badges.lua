@@ -109,21 +109,34 @@ local function CooldownFor(parent, icon)
     return cooldown
 end
 
-local function BadgeAnchor(position, padding)
-    padding = tonumber(padding) or 2
-    padding = math.max(-32, math.min(32, padding))
-    if position == "TOP" then return "BOTTOM", "TOP", 0, padding end
-    if position == "BOTTOM" then return "TOP", "BOTTOM", 0, -padding end
-    if position == "LEFT" then return "RIGHT", "LEFT", -padding, 0 end
-    return "LEFT", "RIGHT", padding, 0
+local function BadgeAnchor(position, baseHorizontalOffset, horizontalAdjustment, verticalOffset)
+    local horizontalOffset = (tonumber(baseHorizontalOffset) or 0)
+        + (tonumber(horizontalAdjustment) or 0)
+    horizontalOffset = math.max(-64, math.min(64, horizontalOffset))
+    verticalOffset = tonumber(verticalOffset) or 0
+    verticalOffset = math.max(-32, math.min(32, verticalOffset))
+    local point, relativePoint
+    if position == "TOP" then
+        point, relativePoint = "BOTTOM", "TOP"
+    elseif position == "BOTTOM" then
+        point, relativePoint = "TOP", "BOTTOM"
+    elseif position == "LEFT" then
+        point, relativePoint = "RIGHT", "LEFT"
+    else
+        point, relativePoint = "LEFT", "RIGHT"
+    end
+    return point, relativePoint, horizontalOffset, verticalOffset
 end
 
-local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey, paddingKey)
+local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey,
+    baseHorizontalOffsetKey, horizontalOffsetKey, verticalOffsetKey)
     local settings = Addon.db and Addon.db.settings
     if not parent then return end
     if not settings or not settings[enabledKey] then Hide(parent); return end
     if not unit then Hide(parent); return end
-    local point, relativePoint, x, y = BadgeAnchor(settings[positionKey], settings[paddingKey])
+    local point, relativePoint, x, y = BadgeAnchor(
+        settings[positionKey], settings[baseHorizontalOffsetKey],
+        settings[horizontalOffsetKey], settings[verticalOffsetKey])
     local state, remaining, duration, confirmed = GetState(unit)
     local border = borders[parent]
     if border then border:Hide() end
@@ -170,7 +183,8 @@ function Badges:RefreshPlate(unit)
     local parent = PlateFrame(unit)
     if not parent then return end
     SetBadge(parent, unit, "nameplateBadge", "nameplateBadgePosition",
-        "nameplateBadgeIconSize", "nameplateBadgePadding")
+        "nameplateBadgeIconSize", "nameplateBadgePadding",
+        "nameplateBadgeHorizontalOffset", "nameplateBadgeVerticalOffset")
 end
 
 function Badges:HidePlate(unit)
@@ -182,7 +196,8 @@ local function RefreshTarget()
     if not TargetFrame then return end
     if not UnitExists("target") then Hide(TargetFrame); return end
     SetBadge(TargetFrame, "target", "targetBadge", "targetBadgePosition",
-        "targetBadgeIconSize", "targetBadgePadding")
+        "targetBadgeIconSize", "targetBadgePadding",
+        "targetBadgeHorizontalOffset", "targetBadgeVerticalOffset")
 end
 
 local function RefreshCurrent()
