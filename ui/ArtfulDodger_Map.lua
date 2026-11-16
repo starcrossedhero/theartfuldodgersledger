@@ -167,6 +167,9 @@ end
 
 function PinMixin:OnAcquired(location)
     self.location = location
+    local baseScale = self:GetMap():GetScaleForMinZoom()
+    self:SetScalingLimits(1, baseScale, baseScale)
+    self:ApplyCurrentScale()
     self.Texture:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
     self.Texture:SetVertexColor(1, 1, 1, 1)
     self.Texture:SetAlpha(1)

@@ -37,6 +37,7 @@ local function CreateCheckbox(parent, text, key, y)
 end
 
 local DIRECTIONS = {
+    { value = "AUTO", label = "Auto" },
     { value = "TOP", label = "Top" },
     { value = "BOTTOM", label = "Bottom" },
     { value = "LEFT", label = "Left" },

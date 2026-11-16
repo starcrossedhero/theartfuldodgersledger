@@ -42,6 +42,8 @@ The main window can also be opened or closed from **The Artful Dodger's Ledger**
 
 Display options are available under **Settings > AddOns > The Artful Dodger's Ledger**. The addon only activates for Rogue characters; supported client versions are listed in the TOC.
 
+Badge positions default to Auto for new installations. Auto follows known default UI elements and falls back to the frame when those elements are unavailable. Existing position settings are preserved, and Auto can be selected in the display options.
+
 ## Mark census
 
 The addon includes a default seed list of NPCs known to have pockets, but treats the data it records itself as the source of truth.

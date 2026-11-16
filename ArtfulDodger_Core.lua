@@ -128,17 +128,21 @@ local function NpcKey(npcID, diff)
 end
 Addon.NpcKey = NpcKey
 
+function ns.CoinsText(copper)
+    local c = math.floor((copper or 0) + 0.5)
+    local g, s, p = math.floor(c / 10000), math.floor((c % 10000) / 100), c % 100
+    if g > 0 then return ("%dg %ds %dc"):format(g, s, p) end
+    if s > 0 then return ("%ds %dc"):format(s, p) end
+    return ("%dc"):format(p)
+end
+
 function ns.Coins(copper)
     local c = math.floor((copper or 0) + 0.5)
     local currencyInfo = C_CurrencyInfo
     if currencyInfo and type(currencyInfo.GetCoinTextureString) == "function" then
         return currencyInfo.GetCoinTextureString(c, 12)
     end
-
-    local g, s, p = math.floor(c / 10000), math.floor((c % 10000) / 100), c % 100
-    if g > 0 then return ("%dg %ds %dc"):format(g, s, p) end
-    if s > 0 then return ("%ds %dc"):format(s, p) end
-    return ("%dc"):format(p)
+    return ns.CoinsText(c)
 end
 
 --========== failure taxonomy (verified enUS 12.1.5) ==========
@@ -167,7 +171,7 @@ local function NewDB()
             tooltip = true, tooltipCopper = true, tooltipItems = true, worldMap = false,
             lockboxOpener = true, lockboxOpenerPosition = { x = 0, y = 0 },
             targetBadge = true, nameplateBadge = true,
-            targetBadgePosition = "RIGHT", nameplateBadgePosition = "RIGHT",
+            targetBadgePosition = "AUTO", nameplateBadgePosition = "AUTO",
             targetBadgeIconSize = 16, targetBadgePadding = -20,
             nameplateBadgeIconSize = 16, nameplateBadgePadding = -5,
             targetBadgeHorizontalOffset = 0, nameplateBadgeHorizontalOffset = 0,
@@ -380,8 +384,8 @@ function Addon:Initialize()
     end
     if self.db.settings.targetBadge == nil then self.db.settings.targetBadge = true end
     if self.db.settings.nameplateBadge == nil then self.db.settings.nameplateBadge = true end
-    if self.db.settings.targetBadgePosition == nil then self.db.settings.targetBadgePosition = "RIGHT" end
-    if self.db.settings.nameplateBadgePosition == nil then self.db.settings.nameplateBadgePosition = "RIGHT" end
+    if self.db.settings.targetBadgePosition == nil then self.db.settings.targetBadgePosition = "AUTO" end
+    if self.db.settings.nameplateBadgePosition == nil then self.db.settings.nameplateBadgePosition = "AUTO" end
     if self.db.settings.targetBadgeIconSize == nil then self.db.settings.targetBadgeIconSize = 16 end
     if self.db.settings.targetBadgePadding == nil then self.db.settings.targetBadgePadding = -20 end
     if self.db.settings.nameplateBadgeIconSize == nil then self.db.settings.nameplateBadgeIconSize = 16 end

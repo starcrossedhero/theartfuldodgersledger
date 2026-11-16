@@ -211,6 +211,9 @@ function Commands:Record(token, inspect, tooltip, data)
     F("reaction",   function() return UnitReaction("player", token) end)
     F("classify",   function() return UnitClassification(token) end)
     F("class",      function() return UnitClass(token) end)
+    if inspect and ns.Badges then
+        F("plateBadge", function() return ns.Badges:DescribePlate(token) end)
+    end
 
     local mine = false
     local relationshipUnknown = false

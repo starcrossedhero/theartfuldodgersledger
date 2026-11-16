@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 local Addon = ns.Addon
 if not Addon then
     _G.ArtfulDodger_OnCompartmentClick = function() end
@@ -562,6 +562,8 @@ function UI:SetView(view)
     frame.copyButton:SetText("Copy Report")
     local isReport = view == "report"
     if isReport then
+        local _, fontSize, fontFlags = ChatFontNormal:GetFont()
+        frame.editBox:SetFont("Interface\\AddOns\\" .. addonName .. "\\fonts\\IBMPlexMono-Medium.ttf", fontSize, fontFlags)
         frame.header:Hide()
         frame.scroll:Hide()
         frame.reportScroll:Show()
@@ -598,6 +600,7 @@ function UI:ShowText(text)
     frame = frame or self:Create()
     self:SetView("report")
     frame.diagnosticText = true
+    frame.editBox:SetFont(ChatFontNormal:GetFont())
     frame.copyButton:SetText("Select Text")
     frame.reportInfo:Hide()
     frame.editBox:SetText(text)

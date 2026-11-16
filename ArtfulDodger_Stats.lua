@@ -146,7 +146,7 @@ local function AddChronicle(out, db, sessionStats)
     if (tonumber(totals.picks) or 0) > 0 then
         local average = math.floor((totals.copper or 0) / totals.picks)
         out[#out + 1] = ("%d pockets lifted | %s ill-gotten gains | Typical Purse: %s")
-            :format(totals.picks, ns.Coins(totals.copper), ns.Coins(average))
+            :format(totals.picks, ns.CoinsText(totals.copper), ns.CoinsText(average))
     else
         out[#out + 1] = "The ledger has yet to record a successful pocket lift."
     end
@@ -159,13 +159,13 @@ local function AddChronicle(out, db, sessionStats)
         containerCopper = containerCopper + (tonumber(container.copper) or 0)
     end
     out[#out + 1] = ("Lockboxes cracked: %d | Lockbox gains: %s")
-        :format(containerOpenings, ns.Coins(containerCopper))
+        :format(containerOpenings, ns.CoinsText(containerCopper))
     out[#out + 1] = ""
     out[#out + 1] = "THIS SESSION'S JOB"
     if sessionStats.picks > 0 or sessionStats.containers > 0 then
         out[#out + 1] = ("%d pockets lifted | %s ill-gotten gains | %d items | %d lockboxes cracked (%s)")
-            :format(sessionStats.picks, ns.Coins(sessionStats.copper), sessionStats.items,
-                sessionStats.containers, ns.Coins(sessionStats.containerCopper))
+            :format(sessionStats.picks, ns.CoinsText(sessionStats.copper), sessionStats.items,
+                sessionStats.containers, ns.CoinsText(sessionStats.containerCopper))
     else
         out[#out + 1] = "No pockets lifted or lockboxes cracked this session."
     end
@@ -186,7 +186,7 @@ local function AddChronicle(out, db, sessionStats)
     local mark = TopRow(marks, "copper")
     if mark then
         out[#out + 1] = ("Most profitable mark: %s (%d pockets, %s).")
-            :format(mark.name, mark.picks, ns.Coins(mark.copper))
+            :format(mark.name, mark.picks, ns.CoinsText(mark.copper))
     end
 
     local location = TopLocation()
@@ -231,33 +231,65 @@ function Stats:GetReportMetadata()
         tostring(clientCompatibility.interfaceVersion), tostring(clientCompatibility.projectID))
 end
 
+local function AddTextTable(out, rows, headers, rightAligned, indent)
+    local widths = {}
+    local function Measure(row)
+        for column, value in ipairs(row) do
+            local length = strlenutf8 and strlenutf8(value) or #value
+            widths[column] = math.max(widths[column] or 0, length)
+        end
+    end
+    if headers then Measure(headers) end
+    for _, row in ipairs(rows) do Measure(row) end
+
+    local function Format(row)
+        local columns = {}
+        for column, value in ipairs(row) do
+            local length = strlenutf8 and strlenutf8(value) or #value
+            local padding = string.rep(" ", widths[column] - length)
+            columns[column] = rightAligned[column] and (padding .. value) or (value .. padding)
+        end
+        return (indent or "") .. table.concat(columns, "  ")
+    end
+    if headers then
+        out[#out + 1] = Format(headers)
+        local length = #headers * 2 - 2
+        for _, width in ipairs(widths) do length = length + width end
+        out[#out + 1] = (indent or "") .. string.rep("-", length)
+    end
+    for _, row in ipairs(rows) do out[#out + 1] = Format(row) end
+end
+
 function Stats:BuildReport()
     local db, out = Addon.db, {}
     AddChronicle(out, db, session)
 
-    out[#out + 1] = "RECENT JOBS (up to 15 shown; history retains the last 50 attempts)"
-    if #db.recent == 0 then out[#out + 1] = "  (none)" end
+    out[#out + 1] = "RECENT JOBS"
+    out[#out + 1] = ""
+    local recentRows = {}
     for i = #db.recent, math.max(1, #db.recent - 14), -1 do
         local e = db.recent[i]
         local row = e.npc and db.npcs[Addon.NpcKey(e.npc, e.diff)]
         local name = ns.ResolveNPCName(e.npc, e.name, row and row.name)
-        out[#out + 1] = ("  %s  %-24s %10s  %d item(s)"):format(
-            date("%H:%M", e.t), name:sub(1, 24),
-            ns.Coins(e.copper), e.items)
+        recentRows[#recentRows + 1] = { date("%H:%M", e.t), name,
+            ns.CoinsText(e.copper), ("%d item(s)"):format(e.items) }
     end
+    AddTextTable(out, recentRows, { "time", "mark", "copper", "items" },
+        { [3] = true, [4] = true }, "  ")
+    if #db.recent == 0 then out[#out + 1] = "  (none)" end
     out[#out + 1] = ""
 
-    out[#out + 1] = "MARKS BY HAUL"
-    out[#out + 1] = ("%-26s %4s %5s %11s  %s"):format("mark", "diff", "picks", "copper", "flags")
-    out[#out + 1] = string.rep("-", 60)
-
+    out[#out + 1] = "RICHEST MARKS"
+    out[#out + 1] = ""
     local rows = Stats:GetSortedRows("copper")
+    local markRows = {}
     for i = 1, math.min(#rows, 40) do
         local r = rows[i]
-        out[#out + 1] = ("%-26s %4s %5d %11s  %s"):format(
-            ns.ResolveNPCName(r.npc, r.name):sub(1, 26), tostring(r.diff),
-            r.picks, ns.Coins(r.copper), r.pocketless and "pocketless" or "")
+        markRows[#markRows + 1] = { ns.ResolveNPCName(r.npc, r.name), tostring(r.diff),
+            tostring(r.picks), ns.CoinsText(r.copper), r.pocketless and "pocketless" or "" }
     end
-    if #rows == 0 then out[#out + 1] = "(no successful lifts recorded yet)" end
+    AddTextTable(out, markRows, { "mark", "diff", "picks", "copper", "flags" },
+        { [2] = true, [3] = true, [4] = true }, "  ")
+    if #rows == 0 then out[#out + 1] = "  (no successful lifts recorded yet)" end
     return out
 end

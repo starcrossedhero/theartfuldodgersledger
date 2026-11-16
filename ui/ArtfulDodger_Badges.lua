@@ -30,14 +30,14 @@ local function GetState(unit)
     return Addon:GetPickpocketState(unit)
 end
 
-local function BadgeFor(parent, point, relativePoint, x, y)
+local function BadgeFor(parent, anchor, point, relativePoint, x, y)
     local fs = attached[parent]
     if not fs then
         fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         attached[parent] = fs
     end
     fs:ClearAllPoints()
-    fs:SetPoint(point, parent, relativePoint, x, y)
+    fs:SetPoint(point, anchor, relativePoint, x, y)
     return fs
 end
 
@@ -68,7 +68,7 @@ local function Apply(fs, state)
     fs:Show()
 end
 
-local function IconFor(parent, point, relativePoint, x, y, configuredSize)
+local function IconFor(parent, anchor, point, relativePoint, x, y, configuredSize)
     local icon = icons[parent]
     if not icon then
         icon = parent:CreateTexture(nil, "OVERLAY")
@@ -78,7 +78,7 @@ local function IconFor(parent, point, relativePoint, x, y, configuredSize)
     size = math.max(8, math.min(32, size))
     icon:SetSize(size, size)
     icon:ClearAllPoints()
-    icon:SetPoint(point, parent, relativePoint, x, y)
+    icon:SetPoint(point, anchor, relativePoint, x, y)
     icon:SetTexture(pickpocketIcon)
     return icon
 end
@@ -128,14 +128,54 @@ local function BadgeAnchor(position, baseHorizontalOffset, horizontalAdjustment,
     return point, relativePoint, horizontalOffset, verticalOffset
 end
 
+local function UsableAnchor(frame)
+    if not frame or type(frame.IsShown) ~= "function" or type(frame.GetNumPoints) ~= "function" then
+        return false
+    end
+    local ok, usable = pcall(function() return frame:IsShown() and frame:GetNumPoints() > 0 end)
+    return ok and usable
+end
+
+local function AutoAnchor(parent, isNameplate)
+    if isNameplate then
+        local levelDiff = parent.PlayerLevelDiffFrame
+        if UsableAnchor(levelDiff) and type(levelDiff.GetPoint) == "function" then
+            local interfaceVersion = tonumber(ns.ClientCompatibility.interfaceVersion) or 0
+            if interfaceVersion >= 16000 and interfaceVersion < 17000 then
+                return levelDiff
+            end
+            local ok, relativePoint = pcall(function()
+                local _, _, point = levelDiff:GetPoint()
+                return point
+            end)
+            if ok and type(relativePoint) == "string" and relativePoint:find("RIGHT") then
+                return levelDiff
+            end
+        end
+        if UsableAnchor(parent.LevelFrame) then return parent.LevelFrame end
+        local healthBar = parent.HealthBarsContainer and parent.HealthBarsContainer.healthBar
+            or parent.healthBar
+        if healthBar and UsableAnchor(healthBar.bgTexture) then return healthBar.bgTexture end
+        if UsableAnchor(parent.HealthBarsContainer) then return parent.HealthBarsContainer end
+        if UsableAnchor(healthBar) then return healthBar end
+    else
+        local texture = parent.TargetFrameContainer and parent.TargetFrameContainer.FrameTexture
+            or parent.textureFrame and parent.textureFrame.texture
+        if UsableAnchor(texture) then return texture end
+    end
+    return parent
+end
+
 local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey,
     baseHorizontalOffsetKey, horizontalOffsetKey, verticalOffsetKey)
     local settings = Addon.db and Addon.db.settings
     if not parent then return end
     if not settings or not settings[enabledKey] then Hide(parent); return end
     if not unit then Hide(parent); return end
+    local auto = settings[positionKey] == "AUTO"
+    local anchor = auto and AutoAnchor(parent, enabledKey == "nameplateBadge") or parent
     local point, relativePoint, x, y = BadgeAnchor(
-        settings[positionKey], settings[baseHorizontalOffsetKey],
+        settings[positionKey], auto and 4 or settings[baseHorizontalOffsetKey],
         settings[horizontalOffsetKey], settings[verticalOffsetKey])
     local state, remaining, duration, confirmed = GetState(unit)
     local border = borders[parent]
@@ -145,7 +185,7 @@ local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey,
         if fs then fs:Hide() end
         local cooldown = cooldowns[parent]
         if cooldown then cooldown:Hide() end
-        local icon = IconFor(parent, point, relativePoint, x, y, settings[sizeKey])
+        local icon = IconFor(parent, anchor, point, relativePoint, x, y, settings[sizeKey])
         icon:Show()
         if not confirmed then BorderFor(parent, icon):Show() end
         return
@@ -153,7 +193,7 @@ local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey,
     if state == "cooldown" then
         local fs = attached[parent]
         if fs then fs:Hide() end
-        local icon = IconFor(parent, point, relativePoint, x, y, settings[sizeKey])
+        local icon = IconFor(parent, anchor, point, relativePoint, x, y, settings[sizeKey])
         icon:Show()
         local cooldown = CooldownFor(parent, icon)
         cooldown:SetCooldown(GetTime() - (duration - remaining), duration)
@@ -165,7 +205,7 @@ local function SetBadge(parent, unit, enabledKey, positionKey, sizeKey,
     local icon = icons[parent]
     if icon then icon:Hide() end
     if state == "robbed" then
-        Apply(BadgeFor(parent, point, relativePoint, x, y), state)
+        Apply(BadgeFor(parent, anchor, point, relativePoint, x, y), state)
     else
         local fs = attached[parent]
         if fs then fs:Hide() end
@@ -179,9 +219,86 @@ local function PlateFrame(unit)
     return np.UnitFrame or np          -- consistent key for cache + hide
 end
 
+local function DescribePlate(parent, settings)
+    local function Name(frame)
+        if not frame then return "none" end
+        if frame == parent then return "parent" end
+        if frame == parent.PlayerLevelDiffFrame then return "PlayerLevelDiffFrame" end
+        if frame == parent.LevelFrame then return "LevelFrame" end
+        local healthBar = parent.HealthBarsContainer and parent.HealthBarsContainer.healthBar
+            or parent.healthBar
+        if healthBar and frame == healthBar.bgTexture then return "healthBar.bgTexture" end
+        if frame == parent.HealthBarsContainer then return "HealthBarsContainer" end
+        if frame == healthBar then return "healthBar" end
+        return "other"
+    end
+    local function Details(frame)
+        if not frame then return "missing" end
+        local function Read(fn)
+            local ok, value = pcall(fn)
+            if not ok then return "error:" .. tostring(value) end
+            if type(issecretvalue) == "function" and issecretvalue(value) then return "secret" end
+            return tostring(value)
+        end
+        return "shown:" .. Read(function() return frame:IsShown() end)
+            .. ",points:" .. Read(function() return frame:GetNumPoints() end)
+            .. ",relative:" .. Read(function() local _, _, point = frame:GetPoint(); return point end)
+    end
+    local icon = icons[parent]
+    local actualAnchor
+    if icon then
+        local ok, anchor = pcall(function() local _, relativeTo = icon:GetPoint(); return relativeTo end)
+        if ok then actualAnchor = anchor end
+    end
+    return "mode=" .. tostring(settings.nameplateBadgePosition)
+        .. " offset=" .. tostring(settings.nameplateBadgeHorizontalOffset)
+        .. " auto=" .. Name(AutoAnchor(parent, true)) .. " icon=" .. Name(actualAnchor)
+        .. " levelDiff=" .. Details(parent.PlayerLevelDiffFrame)
+        .. " level=" .. Details(parent.LevelFrame)
+end
+
+function Badges:DescribePlate(unit)
+    local parent = PlateFrame(unit)
+    if not parent then return "no nameplate" end
+    return DescribePlate(parent, Addon.db and Addon.db.settings or {})
+end
+
+local watchedPlates = setmetatable({}, { __mode = "k" })
+local pendingPlates = setmetatable({}, { __mode = "k" })
+
+local function SchedulePlateRefresh(parent)
+    local settings = Addon.db and Addon.db.settings
+    if not settings or not settings.nameplateBadge or settings.nameplateBadgePosition ~= "AUTO"
+        or pendingPlates[parent] then return end
+    pendingPlates[parent] = true
+    C_Timer.After(0, function()
+        pendingPlates[parent] = nil
+        local unit = parent.unit
+        if type(unit) == "string" and PlateFrame(unit) == parent then
+            Badges:RefreshPlate(unit)
+        end
+    end)
+end
+
+local function WatchPlate(parent)
+    if watchedPlates[parent] then return end
+    watchedPlates[parent] = true
+    for _, key in ipairs({ "LevelFrame", "PlayerLevelDiffFrame" }) do
+        local level = parent[key]
+        if level and type(level.HookScript) == "function" then
+            pcall(level.HookScript, level, "OnShow", function() SchedulePlateRefresh(parent) end)
+            pcall(level.HookScript, level, "OnHide", function() SchedulePlateRefresh(parent) end)
+        end
+    end
+    if type(hooksecurefunc) == "function" and type(parent.UpdateAnchors) == "function" then
+        pcall(hooksecurefunc, parent, "UpdateAnchors", SchedulePlateRefresh)
+    end
+end
+
 function Badges:RefreshPlate(unit)
     local parent = PlateFrame(unit)
     if not parent then return end
+    WatchPlate(parent)
     SetBadge(parent, unit, "nameplateBadge", "nameplateBadgePosition",
         "nameplateBadgeIconSize", "nameplateBadgePadding",
         "nameplateBadgeHorizontalOffset", "nameplateBadgeVerticalOffset")
@@ -206,7 +323,25 @@ local function RefreshCurrent()
     if UnitExists("mouseover") then Badges:RefreshPlate("mouseover") end
 end
 
+local function PlateUnit(plate)
+    if type(plate.GetUnit) == "function" then
+        local ok, unit = pcall(plate.GetUnit, plate)
+        if ok and type(unit) == "string" then return unit end
+    end
+    return plate.unitToken or plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
+end
+
 local function RefreshAllPlates()
+    if C_NamePlate and type(C_NamePlate.GetNamePlates) == "function" then
+        local ok, plates = pcall(C_NamePlate.GetNamePlates)
+        if ok and type(plates) == "table" then
+            for _, plate in ipairs(plates) do
+                local unit = PlateUnit(plate)
+                if type(unit) == "string" then Badges:RefreshPlate(unit) end
+            end
+            return
+        end
+    end
     if not (C_NamePlate and C_NamePlate.GetNumNameplateNodes) then return end
     local ok, n = pcall(C_NamePlate.GetNumNameplateNodes)
     if not ok or not n then return end
