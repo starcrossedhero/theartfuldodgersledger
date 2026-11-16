@@ -9,7 +9,9 @@ if select(3, UnitClass("player")) ~= 4 then return end   -- rogues only
 local Addon = {}
 ns.Addon = Addon
 Addon.addonName = addonName
-Addon.version = "v0.1.0-alpha"
+local getAddOnMetadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or rawget(_G, "GetAddOnMetadata")
+Addon.version = (getAddOnMetadata and getAddOnMetadata(addonName, "Version")) or "unknown"
+if Addon.version:match("^@project%-version@$") then Addon.version = "development" end
 Addon.prefix = "|cff69ccf0ADL|r "
 
 function Addon:Print(...)

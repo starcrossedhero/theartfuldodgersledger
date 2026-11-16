@@ -16,15 +16,19 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check out WoW packager
+        uses: actions/checkout@v4
+        with:
+          repository: BigWigsMods/packager
+          ref: v2
+          path: .wow-packager
+          persist-credentials: false
       - name: Package addon
-        run: |
-          package_dir="dist/TheArtfulDodgersLedger"
-          mkdir -p "$package_dir"
-          cp ./*.lua ./*.toc "$package_dir/"
-          cp README.md LICENSE "$package_dir/"
-          cp -R ui data "$package_dir/"
-          cd dist
-          zip -r ../TheArtfulDodgersLedger.zip TheArtfulDodgersLedger
+        run: GITHUB_EVENT_NAME=workflow_dispatch bash .wow-packager/release.sh -d -n TheArtfulDodgersLedger
+      - name: Prepare build artifact
+        run: cp .release/TheArtfulDodgersLedger.zip TheArtfulDodgersLedger.zip
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
