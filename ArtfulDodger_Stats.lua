@@ -145,12 +145,12 @@ local function AddChronicle(out, db, sessionStats)
 
     if (tonumber(totals.picks) or 0) > 0 then
         local average = math.floor((totals.copper or 0) / totals.picks)
-        out[#out + 1] = ("%d pockets lifted | %s ill-gotten gains | Typical Purse: %s")
+        out[#out + 1] = ("%d pockets lifted for %s; typical purse: %s.")
             :format(totals.picks, ns.CoinsText(totals.copper), ns.CoinsText(average))
     else
         out[#out + 1] = "The ledger has yet to record a successful pocket lift."
     end
-    out[#out + 1] = ("Attempts: %d casts | %d already lifted | %d pocketless marks")
+    out[#out + 1] = ("%d attempts; %d already lifted, %d pocketless marks.")
         :format(totals.casts, totals.already, totals.pocketless)
 
     local containerOpenings, containerCopper = 0, 0
@@ -158,7 +158,7 @@ local function AddChronicle(out, db, sessionStats)
         containerOpenings = containerOpenings + (tonumber(container.openings) or 0)
         containerCopper = containerCopper + (tonumber(container.copper) or 0)
     end
-    out[#out + 1] = ("Lockboxes cracked: %d | Lockbox gains: %s")
+    out[#out + 1] = ("%d lockboxes cracked for %s.")
         :format(containerOpenings, ns.CoinsText(containerCopper))
     out[#out + 1] = ""
     out[#out + 1] = "THIS SESSION'S JOB"
@@ -279,16 +279,25 @@ function Stats:BuildReport()
     if #db.recent == 0 then out[#out + 1] = "  (none)" end
     out[#out + 1] = ""
 
-    out[#out + 1] = "RICHEST MARKS"
+    out[#out + 1] = "PROFITABLE MARKS"
     out[#out + 1] = ""
     local rows = Stats:GetSortedRows("copper")
     local markRows = {}
+    local showDifficulty = false
+    for i = 1, math.min(#rows, 40) do
+        if (tonumber(rows[i].diff) or 0) ~= 0 then showDifficulty = true; break end
+    end
+    local headers = { "mark" }
+    if showDifficulty then headers[#headers + 1] = "diff" end
+    headers[#headers + 1], headers[#headers + 2] = "picks", "copper"
     for i = 1, math.min(#rows, 40) do
         local r = rows[i]
-        markRows[#markRows + 1] = { ns.ResolveNPCName(r.npc, r.name), tostring(r.diff),
-            tostring(r.picks), ns.CoinsText(r.copper), r.pocketless and "pocketless" or "" }
+        local markRow = { ns.ResolveNPCName(r.npc, r.name) }
+        if showDifficulty then markRow[#markRow + 1] = tostring(r.diff or 0) end
+        markRow[#markRow + 1], markRow[#markRow + 2] = tostring(r.picks), ns.CoinsText(r.copper)
+        markRows[#markRows + 1] = markRow
     end
-    AddTextTable(out, markRows, { "mark", "diff", "picks", "copper", "flags" },
+    AddTextTable(out, markRows, headers,
         { [2] = true, [3] = true, [4] = true }, "  ")
     if #rows == 0 then out[#out + 1] = "  (no successful lifts recorded yet)" end
     return out
