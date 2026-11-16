@@ -457,6 +457,8 @@ function UI:Create()
         tab:SetPoint("TOPLEFT", f, "TOPLEFT", tabX, -66)
         tab:SetText(spec.text)
         tab:SetScript("OnClick", TabClick(spec.id))
+        local highlight = tab:GetHighlightTexture()
+        if highlight then highlight:SetVertexColor(1, 0.82, 0) end
         f.tabs[spec.id] = tab
         tabX = tabX + spec.width + 4
     end
@@ -473,6 +475,8 @@ function UI:Create()
             button:SetPoint("LEFT", f.header, "LEFT", x, 0)
             button:SetText(column.label)
             button:SetScript("OnClick", SortClick(view, column.key, column.ascending))
+            local highlight = button:GetHighlightTexture()
+            if highlight then highlight:SetVertexColor(1, 0.82, 0) end
             buttons[index] = button
             x = x + column.width
         end
@@ -593,6 +597,7 @@ function UI:SetView(view)
     end
     for id, tab in pairs(frame.tabs) do
         tab:SetAlpha(id == view and 1 or 0.75)
+        if id == view then tab:LockHighlight() else tab:UnlockHighlight() end
     end
     if isReport then self:Refresh() else self:RefreshTable() end
 end
@@ -710,6 +715,7 @@ function UI:RefreshTable()
         local column = columns[index]
         local marker = sort.key == column.key and (sort.ascending and " ^" or " v") or ""
         button:SetText(column.label .. marker)
+        if sort.key == column.key then button:LockHighlight() else button:UnlockHighlight() end
     end
 
     local rows = GetRows(activeView)

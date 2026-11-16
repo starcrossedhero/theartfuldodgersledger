@@ -14,6 +14,81 @@ local MAP_PICKS = "Pockets Lifted"
 local MAP_GAINS = "Ill-Gotten Gains"
 local MAP_PURSE = "Typical Purse"
 local MAP_ITEMS = "Possible Take"
+local PIN_GAP = 4
+
+local function LayoutPins(mapCanvas)
+    local canvas = mapCanvas:GetCanvas()
+    local width, height = canvas:GetWidth(), canvas:GetHeight()
+    local canvasScale = mapCanvas:GetCanvasScale()
+    if not width or not height or width <= 0 or height <= 0 or not canvasScale or canvasScale <= 0 then return end
+
+    local pins = {}
+    for pin in mapCanvas:EnumeratePinsByTemplate(PIN_TEMPLATE) do
+        if pin.locationX and pin.locationY then
+            pin:ApplyCurrentScale()
+            pins[#pins + 1] = pin
+        end
+    end
+    table.sort(pins, function(first, second)
+        if first.locationX ~= second.locationX then return first.locationX < second.locationX end
+        if first.locationY ~= second.locationY then return first.locationY < second.locationY end
+        return tostring(first.location.displayName or first.location.subzone or first.location.zone or "")
+            < tostring(second.location.displayName or second.location.subzone or second.location.zone or "")
+    end)
+
+    local placed = {}
+    for _, pin in ipairs(pins) do
+        local halfWidth = (pin:GetWidth() * pin:GetScale() + PIN_GAP / canvasScale) / (2 * width)
+        local halfHeight = (pin:GetHeight() * pin:GetScale() + PIN_GAP / canvasScale) / (2 * height)
+        local minX, maxX = halfWidth, 1 - halfWidth
+        local minY, maxY = halfHeight, 1 - halfHeight
+        if minX <= maxX and minY <= maxY then
+            local originalX = math.max(minX, math.min(maxX, pin.locationX))
+            local originalY = math.max(minY, math.min(maxY, pin.locationY))
+            local xs, ys = { originalX }, { originalY }
+            local overlaps = false
+            for _, other in ipairs(placed) do
+                xs[#xs + 1] = other.x - other.halfWidth - halfWidth
+                xs[#xs + 1] = other.x + other.halfWidth + halfWidth
+                ys[#ys + 1] = other.y - other.halfHeight - halfHeight
+                ys[#ys + 1] = other.y + other.halfHeight + halfHeight
+                if math.abs(originalX - other.x) < halfWidth + other.halfWidth - 1e-10
+                    and math.abs(originalY - other.y) < halfHeight + other.halfHeight - 1e-10 then
+                    overlaps = true
+                end
+            end
+            local bestX, bestY, bestDistance = originalX, originalY
+            if overlaps then
+                xs[#xs + 1], xs[#xs + 2] = minX, maxX
+                ys[#ys + 1], ys[#ys + 2] = minY, maxY
+                for _, x in ipairs(xs) do
+                    if x >= minX and x <= maxX then
+                        for _, y in ipairs(ys) do
+                            if y >= minY and y <= maxY then
+                                local distance = ((x - pin.locationX) * width)^2 + ((y - pin.locationY) * height)^2
+                                if not bestDistance or distance < bestDistance then
+                                    local available = true
+                                    for _, other in ipairs(placed) do
+                                        if math.abs(x - other.x) < halfWidth + other.halfWidth - 1e-10
+                                            and math.abs(y - other.y) < halfHeight + other.halfHeight - 1e-10 then
+                                            available = false
+                                            break
+                                        end
+                                    end
+                                    if available then bestX, bestY, bestDistance = x, y, distance end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            placed[#placed + 1] = { x = bestX, y = bestY, halfWidth = halfWidth, halfHeight = halfHeight }
+            pin:SetPosition(bestX, bestY)
+        else
+            pin:SetPosition(pin.locationX, pin.locationY)
+        end
+    end
+end
 
 local function LocationPosition(location, sourceMapID, targetMapID)
     local x, y = tonumber(location.positionX), tonumber(location.positionY)
@@ -183,6 +258,7 @@ end
 
 function PinMixin:OnReleased()
     self.location = nil
+    self.locationX, self.locationY = nil, nil
     MapCanvasPinMixin.OnReleased(self)
 end
 
@@ -209,6 +285,14 @@ end
 
 function ProviderMixin:RemoveAllData()
     if self:GetMap() then self:GetMap():RemoveAllPinsByTemplate(PIN_TEMPLATE) end
+end
+
+function ProviderMixin:OnCanvasScaleChanged()
+    LayoutPins(self:GetMap())
+end
+
+function ProviderMixin:OnCanvasSizeChanged()
+    LayoutPins(self:GetMap())
 end
 
 function ProviderMixin:RefreshAllData()
@@ -241,6 +325,7 @@ function ProviderMixin:RefreshAllData()
                                     AddToAggregate(aggregate, location, x, y)
                                 else
                                     local pin = self:GetMap():AcquirePin(PIN_TEMPLATE, location)
+                                    pin.locationX, pin.locationY = x, y
                                     pin:SetPosition(x, y)
                                     pin:Show()
                                 end
@@ -256,9 +341,11 @@ function ProviderMixin:RefreshAllData()
         aggregate.positionY = aggregate.weightedY / aggregate.positionSamples
         aggregate.weightedX, aggregate.weightedY = nil, nil
         local pin = self:GetMap():AcquirePin(PIN_TEMPLATE, aggregate)
+        pin.locationX, pin.locationY = aggregate.positionX, aggregate.positionY
         pin:SetPosition(aggregate.positionX, aggregate.positionY)
         pin:Show()
     end
+    LayoutPins(mapCanvas)
 end
 
 function Map:Attach()
